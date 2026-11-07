@@ -2,6 +2,7 @@ name: Godot project check
 on:
   push:
   pull_request:
+
 jobs:
   import-and-smoke:
     runs-on: ubuntu-latest
@@ -13,6 +14,6 @@ jobs:
           version: 4.5.1
           use-dotnet: false
       - name: Import assets
-        run: godot --headless --editor --path . --quit
+        run: godot --headless --editor --path mangal_evening --quit
       - name: Smoke-test audio and gameplay
-        run: godot --headless --path . --script res://tests/smoke_test.gd
+        run: godot --headless --path mangal_evening --script res://tests/smoke_test.gd
