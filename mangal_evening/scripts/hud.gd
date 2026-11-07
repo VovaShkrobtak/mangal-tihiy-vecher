@@ -324,7 +324,7 @@ func layout_errors() -> PackedStringArray:
 				issues.append("Out of bounds: " + str(control))
 			for other in visible_controls:
 				if rect.intersects(other.get_global_rect()):
-					issues.append("Overlap: %s and %s at tab %d" % [control.name, other.name, t])
+					issues.append("Overlap: %s %s and %s %s at tab %d" % [control.name, str(rect), other.name, str(other.get_global_rect()), t])
 			visible_controls.append(control)
 	set_tab(current)
 	return issues
