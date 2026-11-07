@@ -6,6 +6,7 @@ extends Node2D
 @onready var soundscape = $Soundscape
 @onready var world = $AnimatedWorld
 @onready var atmosphere = $Atmosphere
+@onready var table_props = $TableProps
 @onready var hud = $HUD
 var ui_tick := 0.0
 
@@ -19,6 +20,7 @@ func _ready() -> void:
 	world.state = state
 	world.radio = radio
 	atmosphere.state = state
+	table_props.state = state
 	state.message.connect(_on_message)
 	hud.request.connect(_on_action)
 	hud.setup(state, radio, soundscape)
@@ -45,6 +47,13 @@ func _on_action(action_name: String, payload: Variant) -> void:
 		"fan": state.fan_fire()
 		"smoke": state.smoke()
 		"tea": state.drink_tea()
+		"brew": state.brew_tea()
+		"pour": state.pour_tea()
+		"extinguish": state.extinguish_cigarette()
+		"empty_ashtray": state.empty_ashtray()
+		"plate": state.put_on_plate()
+		"eat": state.eat_plate()
+		"sauce": state.choose_sauce(int(payload))
 		"power":
 			radio.set_power(not radio.is_on)
 			state.radio_on = radio.is_on
@@ -91,6 +100,39 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _click_world(p: Vector2) -> void:
 	if p.y >= 250.0 or p.y < 35.0:
+		return
+	var prop: String = table_props.hit_test(p)
+	if prop != "":
+		match prop:
+			"kettle":
+				hud.set_tab(2)
+				state.brew_tea()
+			"cup":
+				hud.set_tab(2)
+				if state.cup_filled:
+					state.drink_tea()
+				else:
+					state.pour_tea()
+			"cigarettes":
+				hud.set_tab(2)
+				state.smoke()
+			"ashtray":
+				hud.set_tab(2)
+				if state.cigarette_left > 0.0:
+					state.extinguish_cigarette()
+				else:
+					state.empty_ashtray()
+			"plate":
+				hud.set_tab(3)
+				if state.plated_food != "":
+					state.eat_plate()
+				else:
+					state.put_on_plate()
+			"sauce":
+				hud.set_tab(3)
+				var index: int = state.SAUCES.find(state.sauce_selected)
+				state.choose_sauce((index + 1) % state.SAUCES.size())
+		hud.refresh()
 		return
 	if p.x >= 280.0 and p.x <= 430.0 and p.y >= 149.0 and p.y <= 229.0:
 		hud.set_tab(0)

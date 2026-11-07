@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Texture2D" path="res://assets/backyard.png" id="2_background"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/world.gd" id="6_world"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://scripts/atmosphere.gd" id="8_atmosphere"]
+[ext_resource type="Script" path="res://scripts/table_props.gd" id="9_props"]
 
 [node name="MangalEvening" type="Node2D"]
 script = ExtResource("1_game")
@@ -31,6 +32,9 @@ script = ExtResource("6_world")
 
 [node name="Atmosphere" type="Node2D" parent="."]
 script = ExtResource("8_atmosphere")
+
+[node name="TableProps" type="Node2D" parent="."]
+script = ExtResource("9_props")
 
 [node name="HUD" type="Control" parent="."]
 mouse_filter = 2
