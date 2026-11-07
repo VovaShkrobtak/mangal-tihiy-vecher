@@ -1,11 +1,16 @@
 extends Node
 ## Persistent evening ambience and one-shot sound effects.
 
+var state = null
+var detail_player: AudioStreamPlayer
+var detail_timer := 3.0
+var rng := RandomNumberGenerator.new()
 var ambient_player: AudioStreamPlayer
 var effects_player: AudioStreamPlayer
 var ambient_volume := 0.80
 
 func _ready() -> void:
+	rng.randomize()
 	ambient_player = AudioStreamPlayer.new()
 	ambient_player.name = "EveningAmbience"
 	ambient_player.bus = "Master"
@@ -14,6 +19,10 @@ func _ready() -> void:
 	effects_player.name = "Foley"
 	effects_player.bus = "Master"
 	add_child(effects_player)
+	detail_player = AudioStreamPlayer.new()
+	detail_player.name = "LivingDetails"
+	detail_player.bus = "Master"
+	add_child(detail_player)
 	var ambience: AudioStream = load("res://audio/night_ambience.wav")
 	if ambience is AudioStreamWAV:
 		var wav := ambience as AudioStreamWAV
@@ -41,6 +50,25 @@ func play_effect(name: String) -> void:
 	effects_player.volume_db = -9.0
 	effects_player.play()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if ambient_player.stream != null and not ambient_player.playing:
 		ambient_player.play()
+	if state == null:
+		return
+	detail_timer -= delta
+	if detail_timer > 0.0:
+		return
+	detail_timer = rng.randf_range(3.5, 7.0)
+	if detail_player.playing or float(state.coals) < 8.0:
+		return
+	var clip := "coals.wav"
+	var loudness := -17.0
+	if String(state.current_food) != "" and rng.randf() < 0.55:
+		clip = "sizzle.wav"
+		loudness = -15.0
+	var path := "res://audio/" + clip
+	if ResourceLoader.exists(path):
+		detail_player.stream = load(path)
+		detail_player.volume_db = loudness
+		detail_player.pitch_scale = rng.randf_range(0.94, 1.06)
+		detail_player.play()

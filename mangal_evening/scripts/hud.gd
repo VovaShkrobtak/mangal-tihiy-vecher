@@ -239,11 +239,9 @@ func refresh() -> void:
 	var hour: int = int(state.time_minutes / 60.0)
 	var minute: int = int(state.time_minutes) % 60
 	time_label.text = "%02d:%02d" % [hour, minute]
-	hud_label.text = "УЮТ %d%%    ПОРЦИЙ %d" % [int(state.comfort), state.servings]
-	var darkness := 0.05
-	if hour >= 20 or hour < 5:
-		darkness = 0.30 if hour >= 22 or hour < 4 else 0.19
-	dark_layer.color = Color(0.015, 0.035, 0.11, darkness)
+	hud_label.text = "УЮТ %d%% • %s • ПОРЦИЙ %d" % [int(state.comfort), state.time_phase_label(), state.servings]
+	# The atmosphere layer now handles darkness before the warm emissive glows.
+	dark_layer.color = Color(0.015, 0.035, 0.11, 0.0)
 	coal_label.text = "ЖАР: %d%%  %s" % [int(state.coals), "▰▰▰" if state.coals > 50 else "▰" if state.coals > 15 else "○"]
 	if state.current_food == "":
 		food_label.text = "ШАМПУРЫ СВОБОДНЫ"

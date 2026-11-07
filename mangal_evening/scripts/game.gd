@@ -5,6 +5,7 @@ extends Node2D
 @onready var radio = $Radio
 @onready var soundscape = $Soundscape
 @onready var world = $AnimatedWorld
+@onready var atmosphere = $Atmosphere
 @onready var hud = $HUD
 var ui_tick := 0.0
 
@@ -12,9 +13,11 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("#162031"))
 	state.load_save()
 	radio.configure(state.radio_on, state.frequency, state.volume)
+	soundscape.state = state
 	soundscape.configure(state.ambience_volume)
 	world.state = state
 	world.radio = radio
+	atmosphere.state = state
 	state.message.connect(_on_message)
 	hud.request.connect(_on_action)
 	hud.setup(state, radio, soundscape)

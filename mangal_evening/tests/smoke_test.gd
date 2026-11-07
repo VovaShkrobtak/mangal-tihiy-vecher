@@ -20,6 +20,23 @@ func run_test() -> void:
 	var radio: Node = main.get_node("Radio")
 	var soundscape: Node = main.get_node("Soundscape")
 	var hud: Control = main.get_node("HUD")
+	var atmosphere: Node2D = main.get_node("Atmosphere")
+	if atmosphere.get("state") != state:
+		fail("Atmosphere is not linked to GameState")
+		return
+	var previous_time: float = state.get("time_minutes")
+	state.set("time_minutes", 1080.0)
+	if float(state.call("night_factor")) > 0.01:
+		fail("At sunset the night factor must begin near zero")
+		return
+	state.set("time_minutes", 1380.0)
+	if float(state.call("night_factor")) < 0.99:
+		fail("At 23:00 the night factor should be one")
+		return
+	state.set("time_minutes", previous_time)
+	if soundscape.get("detail_player") == null:
+		fail("Living ambient audio player is missing")
+		return
 	if hud.get("food_picker") == null:
 		fail("Grill interface is missing")
 		return

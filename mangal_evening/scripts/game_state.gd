@@ -42,6 +42,32 @@ func _process(delta: float) -> void:
 		if save_delay < 0.0:
 			save_game()
 
+func _smoothstep(value: float) -> float:
+	var t := clampf(value, 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+func night_factor() -> float:
+	# 18:00 sunset; full night by 22:00; dawn between 04:30 and 06:30.
+	var t: float = time_minutes
+	if t >= 1080.0 and t < 1320.0:
+		return _smoothstep((t - 1080.0) / 240.0)
+	if t >= 1320.0 or t < 270.0:
+		return 1.0
+	if t >= 270.0 and t < 390.0:
+		return 1.0 - _smoothstep((t - 270.0) / 120.0)
+	return 0.0
+
+func glow_factor() -> float:
+	return clampf((coals + fan_boost * 0.7) / 92.0, 0.0, 1.0)
+
+func time_phase_label() -> String:
+	var night := night_factor()
+	if night >= 0.80:
+		return "НОЧЬ"
+	if night >= 0.35:
+		return "СУМЕРКИ"
+	return "ВЕЧЕР"
+
 func notify(text: String, effect: String = "") -> void:
 	message.emit(text, effect)
 
