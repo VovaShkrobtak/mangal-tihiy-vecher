@@ -1,0 +1,6 @@
+*.wav binary
+*.png binary
+*.gd text eol=lf
+*.tscn text eol=lf
+*.godot text eol=lf
+*.tres text eol=lf

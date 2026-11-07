@@ -1,0 +1,9 @@
+# Godot 4 cache
+.godot/
+.import/
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+# Export artifacts
+builds/

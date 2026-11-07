@@ -1,0 +1,21 @@
+name: Godot project check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  import-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.5.1
+          use-dotnet: false
+      - name: Import all assets
+        run: godot --headless --editor --path . --quit
+      - name: Load and smoke-test scene
+        run: godot --headless --path . --script tests/smoke_test.gd
