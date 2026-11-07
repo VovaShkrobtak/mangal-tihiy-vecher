@@ -1,6 +1,33 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scripts/game.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Texture2D" path="res://assets/backyard.png" id="2_background"]
+[ext_resource type="Script" path="res://scripts/game_state.gd" id="3_state"]
+[ext_resource type="Script" path="res://scripts/radio.gd" id="4_radio"]
+[ext_resource type="Script" path="res://scripts/soundscape.gd" id="5_soundscape"]
+[ext_resource type="Script" path="res://scripts/world.gd" id="6_world"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="7_hud"]
 
 [node name="MangalEvening" type="Node2D"]
-script = ExtResource("1_script")
+script = ExtResource("1_game")
+
+[node name="PixelArtBackground" type="Sprite2D" parent="."]
+texture_filter = 1
+centered = false
+texture = ExtResource("2_background")
+
+[node name="GameState" type="Node" parent="."]
+script = ExtResource("3_state")
+
+[node name="Radio" type="Node" parent="."]
+script = ExtResource("4_radio")
+
+[node name="Soundscape" type="Node" parent="."]
+script = ExtResource("5_soundscape")
+
+[node name="AnimatedWorld" type="Node2D" parent="."]
+script = ExtResource("6_world")
+
+[node name="HUD" type="Control" parent="."]
+mouse_filter = 2
+script = ExtResource("7_hud")

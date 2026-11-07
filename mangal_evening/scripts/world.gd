@@ -1,7 +1,8 @@
 extends Node2D
 ## Pixel-precise animated details painted above the static background.
 
-var game = null
+var state = null
+var radio = null
 var phase := 0.0
 var smoke_particles: Array[Dictionary] = []
 var ember_particles: Array[Dictionary] = []
@@ -14,10 +15,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	phase += delta
-	if game != null and game.cigarette_left > 0.0 and smoke_particles.size() < 24:
+	if state != null and state.cigarette_left > 0.0 and smoke_particles.size() < 24:
 		if rng.randf() < delta * 6.0:
 			smoke_particles.append({"x": 167.0, "y": 157.0, "life": 0.0, "max": rng.randf_range(1.8, 3.2), "vx": rng.randf_range(-5.0, 3.0)})
-	if game != null and game.coals > 4.0 and smoke_particles.size() < 24:
+	if state != null and state.coals > 4.0 and smoke_particles.size() < 24:
 		if rng.randf() < delta * 3.0:
 			smoke_particles.append({"x": rng.randf_range(322.0, 395.0), "y": 180.0, "life": 0.0, "max": rng.randf_range(2.0, 4.0), "vx": rng.randf_range(-5.0, 5.0)})
 	for p in smoke_particles:
@@ -30,7 +31,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	if game == null:
+	if state == null:
 		return
 	_draw_fireflies()
 	_draw_coals_and_flames()
@@ -50,7 +51,7 @@ func _draw_fireflies() -> void:
 		_pixel_rect(x + sin(phase * 0.25 + float(i)) * 5.0, y + cos(phase * 0.34 + float(i)) * 4.0, 2, 2, Color(1.0, 0.91, 0.48, alpha))
 
 func _draw_coals_and_flames() -> void:
-	var intensity: float = clampf(game.coals / 80.0, 0.0, 1.0)
+	var intensity: float = clampf(state.coals / 80.0, 0.0, 1.0)
 	for i in range(29):
 		var x := 302 + (i * 17) % 106
 		var y := 184 + (i * 11) % 8
@@ -68,15 +69,15 @@ func _draw_coals_and_flames() -> void:
 			_pixel_rect(x, 183 - height * 0.46, 2, 3, Color(1.0, 0.86, 0.36, 0.67 * intensity))
 
 func _draw_skewer() -> void:
-	if game.current_food == "":
+	if state.current_food == "":
 		return
-	var target: float = game.current_target
-	var degree: float = maxf(game.side_a, game.side_b) / maxf(target, 0.1)
+	var target: float = state.current_target
+	var degree: float = maxf(state.side_a, state.side_b) / maxf(target, 0.1)
 	var burned: bool = degree > 2.1
-	var raw := Color(game.food_color)
+	var raw := Color(state.food_color)
 	var cooked := Color("#9a4d29")
 	var dark := Color("#32231e")
-	var t: float = clampf((game.side_a + game.side_b) / (target * 2.0), 0.0, 1.0)
+	var t: float = clampf((state.side_a + state.side_b) / (target * 2.0), 0.0, 1.0)
 	var meat_color: Color = raw.lerp(cooked, t)
 	if burned:
 		meat_color = dark
@@ -88,15 +89,15 @@ func _draw_skewer() -> void:
 			_pixel_rect(x - 1, y - 5, 13, 9, Color("#34251e"))
 			_pixel_rect(x, y - 5, 11, 7, meat_color)
 			_pixel_rect(x + 2, y - 4, 4, 2, meat_color.lightened(0.22))
-			if game.food_is_vegetable:
+			if state.food_is_vegetable:
 				_pixel_rect(x + 8, y - 3, 3, 5, Color("#56804a"))
 			if t > 0.36:
 				_pixel_rect(x + 4, y, 4, 1, Color("#38241e"))
 
 func _draw_radio_light() -> void:
-	if game.radio_on:
+	if radio != null and radio.is_on:
 		_pixel_rect(559, 142, 5, 3, Color("#ffcc6b"))
-		if game.active_station >= 0:
+		if radio.active_station >= 0:
 			_pixel_rect(569, 142, 9, 3, Color("#8fe2a3"))
 		else:
 			_pixel_rect(569, 142, 9, 3, Color("#ce6753"))
@@ -104,7 +105,7 @@ func _draw_radio_light() -> void:
 		_pixel_rect(559, 142, 5, 3, Color("#554a4a"))
 
 func _draw_cigarette() -> void:
-	if game.cigarette_left <= 0.0:
+	if state.cigarette_left <= 0.0:
 		return
 	var tip := Vector2(167, 156)
 	draw_line(Vector2(163, 158), tip, Color("#e4ded0"), 2.0)

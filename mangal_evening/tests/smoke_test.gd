@@ -1,34 +1,58 @@
 extends SceneTree
-## Automated scene smoke test for GitHub Actions.
+## Headless regression test for the modular scene and its continuous audio.
 
 func _initialize() -> void:
 	call_deferred("run_test")
 
+func fail(reason: String) -> void:
+	push_error(reason)
+	quit(1)
+
 func run_test() -> void:
 	var scene: PackedScene = load("res://scenes/main.tscn")
 	if scene == null:
-		push_error("Could not load main scene")
-		quit(1)
+		fail("Could not load main scene")
 		return
 	var main: Node = scene.instantiate()
 	root.add_child(main)
 	await process_frame
-	if main.get("food_picker") == null:
-		push_error("Grill interface is missing")
-		quit(1)
+	var state: Node = main.get_node("GameState")
+	var radio: Node = main.get_node("Radio")
+	var soundscape: Node = main.get_node("Soundscape")
+	var hud: Control = main.get_node("HUD")
+	if hud.get("food_picker") == null:
+		fail("Grill interface is missing")
 		return
-	main.call("_start_food")
-	if String(main.get("current_food")) == "":
-		push_error("Grill did not accept a food choice")
-		quit(1)
+	state.call("start_food", "Свинина")
+	if String(state.get("current_food")) != "Свинина":
+		fail("Grill did not accept a food choice")
 		return
-	main.call("_flip_food")
-	main.call("_take_food")
-	main.call("_tune_preset", 3)
-	main.call("_smoke")
-	if float(main.get("cigarette_left")) < 1.0:
-		push_error("Cigarette mechanic failed")
-		quit(1)
+	state.call("flip_food")
+	state.call("take_food")
+	state.call("smoke")
+	if float(state.get("cigarette_left")) < 1.0:
+		fail("Cigarette mechanic failed")
 		return
-	print("PASS: scene loaded, food cooked/turned, radio tuned, cigarette action")
+	# A default scene should play the evening ambience continuously.
+	var ambient: AudioStreamPlayer = soundscape.get("ambient_player")
+	if ambient.stream == null or not ambient.playing or ambient.volume_db < -18.0:
+		fail("Evening ambience is missing, stopped or inaudibly quiet")
+		return
+	# Test button must defeat an old saved radio mute/off and switch to known preset.
+	radio.call("set_power", false)
+	radio.call("set_volume", 0.0)
+	main.call("_on_action", "radio_test", null)
+	await process_frame
+	var music: AudioStreamPlayer = radio.get("music_player")
+	if not bool(radio.get("is_on")) or int(radio.get("active_station")) != 1:
+		fail("Radio test did not tune the expected 93.7 MHz station")
+		return
+	if music.stream == null or not music.playing or music.volume_db < -8.0:
+		fail("Radio music is missing, stopped or inaudibly quiet")
+		return
+	var wav := music.stream as AudioStreamWAV
+	if wav == null or wav.loop_mode != AudioStreamWAV.LOOP_FORWARD or wav.loop_end <= 0:
+		fail("Radio WAV is not configured for seamless looping")
+		return
+	print("PASS: modular scene, grill, cigarette, audible ambience, radio playback and looping")
 	quit(0)
