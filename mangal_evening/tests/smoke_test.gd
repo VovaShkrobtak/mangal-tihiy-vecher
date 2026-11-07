@@ -37,6 +37,17 @@ func run_test() -> void:
 	if soundscape.get("detail_player") == null:
 		fail("Living ambient audio player is missing")
 		return
+	var dial: Control = hud.get("radio_dial")
+	var strength: ProgressBar = hud.get("reception_bar")
+	if dial == null or strength == null:
+		fail("Analogue tuning controls are missing")
+		return
+	if hud.get_node_or_null("TuningKnob") != null:
+		fail("Radio dial must live in the radio tab")
+		return
+	if hud.panels.size() < 2 or hud.panels[1].get_node_or_null("TuningKnob") == null:
+		fail("Cannot find tuning knob on radio panel")
+		return
 	if hud.get("food_picker") == null:
 		fail("Grill interface is missing")
 		return
@@ -71,5 +82,25 @@ func run_test() -> void:
 	if wav == null or wav.loop_mode != AudioStreamWAV.LOOP_FORWARD or wav.loop_end <= 0:
 		fail("Radio WAV is not configured for seamless looping")
 		return
-	print("PASS: modular scene, grill, cigarette, audible ambience, radio playback and looping")
+	var radio_bus: int = AudioServer.get_bus_index("VintageRadio")
+	if radio_bus < 0 or AudioServer.get_bus_effect_count(radio_bus) < 2:
+		fail("Old-style speaker filtering bus is missing")
+		return
+	radio.call("set_frequency", 95.3)
+	if int(radio.get("active_station")) != -1:
+		fail("Out-of-band tuning should produce static")
+		return
+	radio.call("set_frequency", 93.7)
+	if int(radio.get("active_station")) != 1:
+		fail("Fine tuning cannot reacquire the station")
+		return
+	radio.call("request_broadcast")
+	if String(radio.get("broadcast_text")).is_empty():
+		fail("Host/weather broadcast content is missing")
+		return
+	var jingle: AudioStreamPlayer = radio.get("jingle_player")
+	if jingle.stream == null or not jingle.playing:
+		fail("Generated station ident is not playing")
+		return
+	print("PASS: speaker filter, tuning knob, static, radio ident, broadcast, ambience and gameplay")
 	quit(0)

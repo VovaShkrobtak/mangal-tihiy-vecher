@@ -3,6 +3,7 @@ extends Control
 
 signal request(action_name: String, payload: Variant)
 const Data = preload("res://scripts/data.gd")
+const RadioDial = preload("res://scripts/radio_dial.gd")
 
 var state = null
 var radio = null
@@ -21,6 +22,8 @@ var radio_label: Label
 var radio_freq_label: Label
 var rest_label: Label
 var radio_slider: HSlider
+var radio_dial: Control
+var reception_bar: ProgressBar
 var volume_slider: HSlider
 var ambience_slider: HSlider
 var radio_toggle: Button
@@ -43,7 +46,11 @@ func _process(delta: float) -> void:
 		return
 	toast_timer = maxf(0.0, toast_timer - delta)
 	if toast_timer <= 0.0 and hint_label != null:
-		hint_label.text = "ЛКМ/касание: мангал — перевернуть, радио — настройки, персонаж — отдых."
+		var spoken_text: String = radio.broadcast_description() if radio != null else ""
+		if spoken_text != "":
+			hint_label.text = "РАДИО: " + spoken_text.substr(0, 90)
+		else:
+			hint_label.text = "ЛКМ/касание: мангал — перевернуть, радио — настройки, персонаж — отдых."
 
 func _make_label(parent: Node, txt: String, px: float, py: float, size: int = 12, color: Color = Color("#f0e4cf")) -> Label:
 	var lbl := Label.new()
@@ -97,7 +104,7 @@ func _create_interface() -> void:
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top)
 	_make_label(self, "МАНГАЛ • ТИХИЙ ВЕЧЕР", 12, 6, 15, Color("#ffe1a4"))
-	hud_label = _make_label(self, "", 306, 8, 12, Color("#f3dfc2"))
+	hud_label = _make_label(self, "", 266, 8, 12, Color("#f3dfc2"))
 	time_label = _make_label(self, "", 565, 8, 12, Color("#f3dfc2"))
 
 	var hints := ColorRect.new()
@@ -156,33 +163,55 @@ func _create_grill_panel(panel: Control) -> void:
 	panel.add_child(progress_bar)
 
 func _create_radio_panel(panel: Control) -> void:
-	radio_toggle = _make_button(panel, "РАДИО: ВКЛ", 12, 283, 115, 28, _send.bind("power"))
+	radio_toggle = _make_button(panel, "РАДИО: ВКЛ", 12, 283, 110, 28, _send.bind("power"))
+	_make_button(panel, "СЛУШАТЬ ЭФИР", 12, 318, 110, 25, _send.bind("radio_broadcast"))
+
+	# Analogue dial: drag up/down or sideways, swipe on Android, mouse wheel.
+	radio_dial = RadioDial.new()
+	radio_dial.name = "TuningKnob"
+	radio_dial.position = Vector2(126, 278)
+	radio_dial.size = Vector2(62, 62)
+	radio_dial.set_frequency(radio.frequency)
+	radio_dial.turned.connect(_frequency_changed)
+	panel.add_child(radio_dial)
+
+	_make_label(panel, "НАСТРОЙКА ЧАСТОТЫ", 196, 278, 10, Color("#c7b99e"))
 	radio_slider = HSlider.new()
-	radio_slider.position = Vector2(141, 287)
-	radio_slider.size = Vector2(339, 21)
+	radio_slider.position = Vector2(196, 293)
+	radio_slider.size = Vector2(260, 21)
 	radio_slider.min_value = 87.5
 	radio_slider.max_value = 108.0
 	radio_slider.step = 0.1
 	radio_slider.value = radio.frequency
 	radio_slider.value_changed.connect(_frequency_changed)
 	panel.add_child(radio_slider)
-	radio_freq_label = _make_label(panel, "", 493, 288, 16, Color("#ffe9af"))
-	_make_label(panel, "СТАНЦИИ:", 12, 324, 10, Color("#a3b5b9"))
+	radio_freq_label = _make_label(panel, "", 466, 289, 14, Color("#ffe9af"))
+
+	_make_label(panel, "СИГНАЛ", 540, 281, 10, Color("#a3b5b9"))
+	reception_bar = ProgressBar.new()
+	reception_bar.name = "SignalStrength"
+	reception_bar.position = Vector2(539, 298)
+	reception_bar.size = Vector2(88, 8)
+	reception_bar.max_value = 100
+	reception_bar.show_percentage = false
+	panel.add_child(reception_bar)
+
+	# One-click presets still exist; the knob is for manually finding a signal.
 	for i in range(Data.STATIONS.size()):
 		var station: Dictionary = Data.STATIONS[i]
-		_make_button(panel, "%0.1f" % float(station["freq"]), 88 + i * 80, 320, 74, 28, _preset.bind(i))
-	_make_label(panel, "ГРОМКОСТЬ", 420, 328, 10, Color("#a3b5b9"))
+		_make_button(panel, "%0.1f" % float(station["freq"]), 194 + i * 81, 319, 75, 25, _preset.bind(i))
+	_make_label(panel, "ЗВУК", 538, 315, 9, Color("#a3b5b9"))
 	volume_slider = HSlider.new()
-	volume_slider.position = Vector2(504, 326)
-	volume_slider.size = Vector2(124, 22)
+	volume_slider.position = Vector2(539, 329)
+	volume_slider.size = Vector2(90, 18)
 	volume_slider.min_value = 0.0
 	volume_slider.max_value = 1.0
 	volume_slider.step = 0.05
 	volume_slider.value = radio.volume
 	volume_slider.value_changed.connect(_volume_changed)
 	panel.add_child(volume_slider)
-	radio_label = _make_label(panel, "", 12, 345, 10, Color("#dfcba7"))
-	_make_button(panel, "ТЕСТ", 561, 346, 67, 13, _send.bind("radio_test"))
+	radio_label = _make_label(panel, "", 12, 347, 10, Color("#dfcba7"))
+	_make_button(panel, "ТЕСТ", 569, 348, 58, 12, _send.bind("radio_test"))
 
 func _create_rest_panel(panel: Control) -> void:
 	_make_button(panel, "ЗАКУРИТЬ", 12, 288, 136, 31, _send.bind("smoke"))
@@ -213,6 +242,8 @@ func _preset(index: int) -> void:
 	radio_slider.set_value_no_signal(float(Data.STATIONS[index]["freq"]))
 
 func _frequency_changed(mhz: float) -> void:
+	radio_dial.set_frequency(mhz)
+	radio_slider.set_value_no_signal(mhz)
 	request.emit("frequency", mhz)
 
 func _volume_changed(value: float) -> void:
@@ -254,10 +285,14 @@ func refresh() -> void:
 		progress_bar.value = clampf(minf(a, b) * 100.0, 0.0, 100.0)
 	radio_toggle.text = "РАДИО: ВКЛ" if radio.is_on else "РАДИО: ВЫКЛ"
 	radio_freq_label.text = "%0.1f MHz" % radio.frequency
-	radio_label.text = radio.station_description()
+	var announcement: String = radio.broadcast_description()
+	radio_label.text = announcement.substr(0, 99) if announcement != "" else radio.station_description()
+	reception_bar.value = radio.reception * 100.0
 	rest_label.text = "УЮТ %d%%  |  ЧАЯ: %d  |  СИГАРЕТА: %s  |  ИСПОРЧЕНО: %d" % [int(state.comfort), state.tea_count, "%d c" % int(state.cigarette_left) if state.cigarette_left > 0.0 else "нет", state.spoiled]
 	# The test restores its own volume; update sliders only when changed from a button.
 	if not is_equal_approx(volume_slider.value, radio.volume):
 		volume_slider.set_value_no_signal(radio.volume)
 	if not is_equal_approx(radio_slider.value, radio.frequency):
 		radio_slider.set_value_no_signal(radio.frequency)
+	if not is_equal_approx(radio_dial.frequency, radio.frequency):
+		radio_dial.set_frequency(radio.frequency)
