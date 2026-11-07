@@ -47,7 +47,7 @@ func _draw_fireflies() -> void:
 	for i in range(13):
 		var x := 24.0 + fmod(float(i * 97), 592.0)
 		var y := 92.0 + fmod(float(i * 47), 128.0)
-		var alpha := (0.08 + maxf(0.0, sin(phase * 1.3 + float(i * 8))) * 0.55) * (0.45 + state.night_factor() * 0.55)
+		var alpha: float = (0.08 + maxf(0.0, sin(phase * 1.3 + float(i * 8))) * 0.55) * (0.45 + state.night_factor() * 0.55)
 		_pixel_rect(x + sin(phase * 0.25 + float(i)) * 5.0, y + cos(phase * 0.34 + float(i)) * 4.0, 2, 2, Color(1.0, 0.91, 0.48, alpha))
 
 func _draw_coals_and_flames() -> void:
