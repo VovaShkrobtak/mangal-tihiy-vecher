@@ -197,7 +197,7 @@ func _make_radio(panel: Control) -> void:
 	radio_toggle = _button(panel, "РАДИО ВКЛ", 12, 284, 95, 26, _send.bind("power"))
 	radio_dial = RadioDial.new()
 	radio_dial.name = "TuningKnob"
-	radio_dial.position = Vector2(110, 277)
+	radio_dial.position = Vector2(119, 277)
 	radio_dial.size = Vector2(50, 38)
 	radio_dial.set_frequency(radio.frequency)
 	radio_dial.turned.connect(_frequency_changed)
