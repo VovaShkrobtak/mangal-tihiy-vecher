@@ -12,6 +12,7 @@ var ui_tick := 0.0
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("#162031"))
 	state.load_save()
+	radio.state = state
 	radio.configure(state.radio_on, state.frequency, state.volume)
 	soundscape.state = state
 	soundscape.configure(state.ambience_volume)
@@ -61,6 +62,8 @@ func _on_action(action_name: String, payload: Variant) -> void:
 			radio.tune_preset(int(payload))
 			state.frequency = radio.frequency
 			state.schedule_save()
+		"radio_broadcast":
+			radio.request_broadcast()
 		"radio_test":
 			radio.test_station()
 			state.radio_on = radio.is_on

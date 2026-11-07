@@ -17,6 +17,8 @@ config/features=PackedStringArray("4.7")
 
 [audio]
 
+general/text_to_speech=true
+
 buses/default_bus_layout="res://audio/default_bus_layout.tres"
 
 [display]
