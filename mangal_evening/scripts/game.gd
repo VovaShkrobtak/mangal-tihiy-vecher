@@ -130,8 +130,7 @@ func _click_world(p: Vector2) -> void:
 					state.put_on_plate()
 			"sauce":
 				hud.set_tab(3)
-				var index: int = state.SAUCES.find(state.sauce_selected)
-				state.choose_sauce((index + 1) % state.SAUCES.size())
+				state.cycle_sauce()
 		hud.refresh()
 		return
 	if p.x >= 280.0 and p.x <= 430.0 and p.y >= 149.0 and p.y <= 229.0:

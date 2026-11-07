@@ -248,6 +248,10 @@ func choose_sauce(index: int) -> void:
 		notify("Выбран соус: %s. Добавь его к блюду на тарелке." % sauce_selected)
 	schedule_save()
 
+func cycle_sauce() -> void:
+	var next: int = (SAUCES.find(sauce_selected) + 1) % SAUCES.size()
+	choose_sauce(next)
+
 func eat_plate() -> void:
 	if plated_food == "":
 		notify("Тарелка пустая. Положи на неё шашлык.")

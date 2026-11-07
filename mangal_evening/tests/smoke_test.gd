@@ -109,6 +109,11 @@ func run_test() -> void:
 	if String(state.get("plated_food")) == "":
 		fail("Serving a plate failed")
 		return
+	var before_sauce: String = state.get("sauce_selected")
+	main.call("_click_world", Vector2(260, 193))
+	if String(state.get("sauce_selected")) == before_sauce:
+		fail("Tapping sauce bottles did not cycle sauce")
+		return
 	state.call("choose_sauce", 1)
 	if String(state.get("plated_sauce")) != "Кетчуп":
 		fail("Applying sauce failed")
