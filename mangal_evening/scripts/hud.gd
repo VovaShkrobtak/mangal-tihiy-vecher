@@ -1,8 +1,11 @@
 extends Control
-## Only the UI. Emits intent; never edits the world state or plays audio.
-
+## Compact pixel HUD: four exclusive tabs, carefully bounded interactive elements.
+## Game rules never live here; this view only displays state and emits requests.
 signal request(action_name: String, payload: Variant)
+
 const Data = preload("res://scripts/data.gd")
+const PixelFont = preload("res://scripts/pixel_font.gd")
+const PixelSlider = preload("res://scripts/pixel_slider.gd")
 const RadioDial = preload("res://scripts/radio_dial.gd")
 
 var state = null
@@ -10,7 +13,7 @@ var radio = null
 var soundscape = null
 var selected_tab := 0
 var toast_timer := 0.0
-var last_toast := "Нажми на мангал или выбери блюдо. Вечер только начинается."
+var last_toast := "Добро пожаловать во двор. Выбери предмет или действие."
 
 var hud_label: Label
 var time_label: Label
@@ -21,242 +24,251 @@ var progress_bar: ProgressBar
 var radio_label: Label
 var radio_freq_label: Label
 var rest_label: Label
-var radio_slider: HSlider
+var table_label: Label
+var radio_slider: Control
+var volume_slider: Control
+var ambience_slider: Control
 var radio_dial: Control
 var reception_bar: ProgressBar
-var volume_slider: HSlider
-var ambience_slider: HSlider
 var radio_toggle: Button
 var food_picker: OptionButton
-var panel_holder: Control
 var panels: Array[Control] = []
 var tabs: Array[Button] = []
-var dark_layer: ColorRect
+var interactive: Array[Control] = []
+var pixel_font: FontFile
 
-func setup(game_state: Node, tuner: Node, atmosphere: Node) -> void:
+func setup(game_state: Node, tuner: Node, ambience: Node) -> void:
 	state = game_state
 	radio = tuner
-	soundscape = atmosphere
+	soundscape = ambience
+	pixel_font = PixelFont.build()
 	_create_interface()
 	refresh()
-	hint(last_toast, 6.0)
+	hint(last_toast, 5.0)
 
 func _process(delta: float) -> void:
 	if state == null:
 		return
 	toast_timer = maxf(0.0, toast_timer - delta)
 	if toast_timer <= 0.0 and hint_label != null:
-		var spoken_text: String = radio.broadcast_description() if radio != null else ""
-		if spoken_text != "":
-			hint_label.text = "РАДИО: " + spoken_text.substr(0, 90)
-		else:
-			hint_label.text = "ЛКМ/касание: мангал — перевернуть, радио — настройки, персонаж — отдых."
+		var speech: String = radio.broadcast_description()
+		hint_label.text = ("РАДИО: " + speech) if speech != "" else "КАСАНИЕ: СТОЛ — ПРЕДМЕТЫ, МАНГАЛ — ШАМПУРЫ, РАДИО — ВОЛНА."
 
-func _make_label(parent: Node, txt: String, px: float, py: float, size: int = 12, color: Color = Color("#f0e4cf")) -> Label:
-	var lbl := Label.new()
-	lbl.text = txt
-	lbl.position = Vector2(px, py)
-	lbl.add_theme_font_size_override("font_size", size)
-	lbl.add_theme_color_override("font_color", color)
-	parent.add_child(lbl)
-	return lbl
+func _label(parent: Node, txt: String, x: float, y: float, width: float, font_size: int = 11, color: Color = Color("#f2ddbc")) -> Label:
+	var l := Label.new()
+	l.text = txt
+	l.position = Vector2(x, y)
+	l.size = Vector2(width, 18)
+	l.clip_text = true
+	l.add_theme_font_override("font", pixel_font)
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_color_override("font_color", color)
+	parent.add_child(l)
+	return l
 
-func _make_button(parent: Node, txt: String, px: float, py: float, w: float, h: float, action: Callable) -> Button:
-	var b := Button.new()
-	b.text = txt
-	b.position = Vector2(px, py)
-	b.size = Vector2(w, h)
-	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 12)
-	b.add_theme_color_override("font_color", Color("#fff0dc"))
-	_apply_button_style(b, false)
-	b.pressed.connect(action)
-	parent.add_child(b)
-	return b
-
-func _apply_button_style(b: Button, active: bool) -> void:
+func _style(button: Button, active: bool = false) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("#8f5137" if active else "#34404a")
-	normal.border_color = Color("#dcaa6a" if active else "#657078")
+	normal.bg_color = Color("#86513a" if active else "#304149")
+	normal.border_color = Color("#f0bb76" if active else "#69777c")
 	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(3)
-	b.add_theme_stylebox_override("normal", normal)
+	normal.set_corner_radius_all(0)
+	button.add_theme_stylebox_override("normal", normal)
 	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("#ae6842")
-	b.add_theme_stylebox_override("hover", hover)
+	hover.bg_color = Color("#a35d40")
+	button.add_theme_stylebox_override("hover", hover)
 	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("#c17b4d")
-	b.add_theme_stylebox_override("pressed", pressed)
+	pressed.bg_color = Color("#bd7548")
+	button.add_theme_stylebox_override("pressed", pressed)
+	var focused := normal.duplicate() as StyleBoxFlat
+	focused.border_color = Color("#ffe6aa")
+	button.add_theme_stylebox_override("focus", focused)
+
+func _button(parent: Node, title: String, x: float, y: float, w: float, h: float, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = title
+	button.position = Vector2(x, y)
+	button.size = Vector2(w, h)
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_override("font", pixel_font)
+	button.add_theme_font_size_override("font_size", 10)
+	button.add_theme_color_override("font_color", Color("#fff0d5"))
+	button.clip_text = true
+	_style(button)
+	parent.add_child(button)
+	button.pressed.connect(callback)
+	interactive.append(button)
+	return button
+
+func _pixel_slider(parent: Node, x: float, y: float, w: float, min_value: float, max_value: float, step: float, initial: float, on_change: Callable) -> Control:
+	var slider := PixelSlider.new()
+	slider.position = Vector2(x, y)
+	slider.size = Vector2(w, 19)
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	slider.set_value_no_signal(initial)
+	slider.value_changed.connect(on_change)
+	parent.add_child(slider)
+	interactive.append(slider)
+	return slider
+
+func _bar(parent: Node, x: float, y: float, w: float) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.position = Vector2(x, y)
+	bar.size = Vector2(w, 8)
+	bar.max_value = 100.0
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color("#16262c")
+	bg.set_corner_radius_all(0)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color("#dfa15d")
+	fill.set_corner_radius_all(0)
+	bar.add_theme_stylebox_override("background", bg)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
+
+func _rect(parent: Node, x: float, y: float, w: float, h: float, color: Color) -> ColorRect:
+	var r := ColorRect.new()
+	r.position = Vector2(x, y)
+	r.size = Vector2(w, h)
+	r.color = color
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(r)
+	return r
 
 func _create_interface() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dark_layer = ColorRect.new()
-	dark_layer.position = Vector2(0, 31)
-	dark_layer.size = Vector2(640, 220)
-	dark_layer.color = Color(0.02, 0.07, 0.16, 0.05)
-	dark_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dark_layer)
-
-	var top := ColorRect.new()
-	top.position = Vector2(0, 0)
-	top.size = Vector2(640, 31)
-	top.color = Color("#16232be8")
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(top)
-	_make_label(self, "МАНГАЛ • ТИХИЙ ВЕЧЕР", 12, 6, 15, Color("#ffe1a4"))
-	hud_label = _make_label(self, "", 266, 8, 12, Color("#f3dfc2"))
-	time_label = _make_label(self, "", 565, 8, 12, Color("#f3dfc2"))
-
-	var hints := ColorRect.new()
-	hints.position = Vector2(12, 219)
-	hints.size = Vector2(616, 28)
-	hints.color = Color("#1b2535d8")
-	hints.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(hints)
-	hint_label = _make_label(self, "", 22, 225, 12, Color("#ffe2ac"))
-
-	var bottom := ColorRect.new()
-	bottom.position = Vector2(0, 251)
-	bottom.size = Vector2(640, 109)
-	bottom.color = Color("#1a2933")
-	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bottom)
-	var names := ["МАНГАЛ [G]", "РАДИО [R]", "ОТДЫХ [T]"]
+	var theme_asset := Theme.new()
+	theme_asset.default_font = pixel_font
+	theme_asset.default_font_size = 10
+	theme = theme_asset
+	_rect(self, 0, 0, 640, 30, Color("#18272ee8"))
+	_label(self, "МАНГАЛ • ТИХИЙ ВЕЧЕР", 11, 7, 218, 11, Color("#ffe4ac"))
+	hud_label = _label(self, "", 238, 8, 320, 10, Color("#f0d8ad"))
+	time_label = _label(self, "", 569, 8, 62, 11)
+	_rect(self, 7, 212, 626, 29, Color("#17252ce7"))
+	hint_label = _label(self, "", 15, 220, 611, 10, Color("#ffe0ab"))
+	_rect(self, 0, 243, 640, 117, Color("#172932"))
+	var names := ["МАНГАЛ [G]", "РАДИО [R]", "ЧАЙ/ТАБАК [T]", "СТОЛ [P]"]
 	for i in range(names.size()):
-		var tab := _make_button(self, names[i], 8 + i * 210, 254, 202, 22, set_tab.bind(i))
+		var tab := _button(self, names[i], 8 + float(i) * 158.0, 246, 150, 27, set_tab.bind(i))
 		tabs.append(tab)
-
-	panel_holder = Control.new()
-	panel_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(panel_holder)
-	for i in range(3):
+	_rect(self, 7, 276, 626, 80, Color("#22343a"))
+	for i in range(names.size()):
 		var panel := Control.new()
+		panel.name = "Tab" + str(i)
+		panel.size = Vector2(640, 360)
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel_holder.add_child(panel)
+		add_child(panel)
 		panels.append(panel)
-	_create_grill_panel(panels[0])
-	_create_radio_panel(panels[1])
-	_create_rest_panel(panels[2])
+	_make_grill(panels[0])
+	_make_radio(panels[1])
+	_make_rest(panels[2])
+	_make_table(panels[3])
 	set_tab(0)
 
-func _create_grill_panel(panel: Control) -> void:
-	_make_label(panel, "ПРОДУКТ", 12, 278, 10, Color("#adbac2"))
+func _make_grill(panel: Control) -> void:
+	_label(panel, "ПРОДУКТ", 12, 277, 110, 9, Color("#b0c1c6"))
 	food_picker = OptionButton.new()
-	food_picker.position = Vector2(12, 292)
-	food_picker.size = Vector2(145, 26)
-	food_picker.add_theme_font_size_override("font_size", 12)
-	for item in Data.FOOD_ORDER:
-		food_picker.add_item(item)
+	food_picker.position = Vector2(12, 291)
+	food_picker.size = Vector2(139, 27)
+	food_picker.clip_text = true
+	food_picker.add_theme_font_override("font", pixel_font)
+	food_picker.add_theme_font_size_override("font_size", 11)
+	food_picker.add_theme_color_override("font_color", Color("#fff0d5"))
+	for food in Data.FOOD_ORDER:
+		food_picker.add_item(food)
+	_style(food_picker)
 	panel.add_child(food_picker)
-	_make_button(panel, "НА МАНГАЛ", 164, 292, 116, 26, _send_food)
-	_make_button(panel, "ПЕРЕВЕРНУТЬ", 286, 292, 131, 26, _send.bind("flip"))
-	_make_button(panel, "СНЯТЬ", 423, 292, 92, 26, _send.bind("take"))
-	_make_button(panel, "+ УГЛИ", 522, 292, 106, 26, _send.bind("coals"))
-	coal_label = _make_label(panel, "", 12, 326, 12, Color("#ffd29e"))
-	food_label = _make_label(panel, "", 228, 326, 12, Color("#f3e3ce"))
-	_make_button(panel, "РАЗДУТЬ ОГОНЬ", 505, 323, 123, 27, _send.bind("fan"))
-	progress_bar = ProgressBar.new()
-	progress_bar.position = Vector2(228, 348)
-	progress_bar.size = Vector2(258, 7)
-	progress_bar.show_percentage = false
-	progress_bar.max_value = 100.0
-	panel.add_child(progress_bar)
+	interactive.append(food_picker)
+	_button(panel, "НА МАНГАЛ", 155, 291, 112, 27, _send_food)
+	_button(panel, "ПЕРЕВЕРНУТЬ", 271, 291, 118, 27, _send.bind("flip"))
+	_button(panel, "СНЯТЬ", 393, 291, 73, 27, _send.bind("take"))
+	_button(panel, "+УГЛИ", 470, 291, 73, 27, _send.bind("coals"))
+	_button(panel, "РАЗДУТЬ", 547, 291, 81, 27, _send.bind("fan"))
+	coal_label = _label(panel, "", 12, 326, 127, 11, Color("#ffce92"))
+	food_label = _label(panel, "", 144, 326, 480, 11, Color("#e9d7bd"))
+	progress_bar = _bar(panel, 144, 347, 480)
 
-func _create_radio_panel(panel: Control) -> void:
-	radio_toggle = _make_button(panel, "РАДИО: ВКЛ", 12, 283, 110, 28, _send.bind("power"))
-	_make_button(panel, "СЛУШАТЬ ЭФИР", 12, 318, 110, 25, _send.bind("radio_broadcast"))
-
-	# Analogue dial: drag up/down or sideways, swipe on Android, mouse wheel.
+func _make_radio(panel: Control) -> void:
+	radio_toggle = _button(panel, "РАДИО ВКЛ", 12, 284, 95, 26, _send.bind("power"))
 	radio_dial = RadioDial.new()
 	radio_dial.name = "TuningKnob"
-	radio_dial.position = Vector2(126, 278)
-	radio_dial.size = Vector2(62, 62)
+	radio_dial.position = Vector2(110, 277)
+	radio_dial.size = Vector2(57, 57)
 	radio_dial.set_frequency(radio.frequency)
 	radio_dial.turned.connect(_frequency_changed)
 	panel.add_child(radio_dial)
-
-	_make_label(panel, "НАСТРОЙКА ЧАСТОТЫ", 196, 278, 10, Color("#c7b99e"))
-	radio_slider = HSlider.new()
-	radio_slider.position = Vector2(196, 293)
-	radio_slider.size = Vector2(260, 21)
-	radio_slider.min_value = 87.5
-	radio_slider.max_value = 108.0
-	radio_slider.step = 0.1
-	radio_slider.value = radio.frequency
-	radio_slider.value_changed.connect(_frequency_changed)
-	panel.add_child(radio_slider)
-	radio_freq_label = _make_label(panel, "", 466, 289, 14, Color("#ffe9af"))
-
-	_make_label(panel, "СИГНАЛ", 540, 281, 10, Color("#a3b5b9"))
-	reception_bar = ProgressBar.new()
-	reception_bar.name = "SignalStrength"
-	reception_bar.position = Vector2(539, 298)
-	reception_bar.size = Vector2(88, 8)
-	reception_bar.max_value = 100
-	reception_bar.show_percentage = false
-	panel.add_child(reception_bar)
-
-	# One-click presets still exist; the knob is for manually finding a signal.
+	interactive.append(radio_dial)
+	_label(panel, "ЧАСТОТА", 175, 277, 130, 9, Color("#abbec0"))
+	radio_slider = _pixel_slider(panel, 176, 292, 231, 87.5, 108.0, 0.1, radio.frequency, _frequency_changed)
+	radio_freq_label = _label(panel, "", 415, 287, 113, 13, Color("#ffe5a8"))
+	_label(panel, "СИГНАЛ", 545, 279, 82, 9, Color("#b2c6c7"))
+	reception_bar = _bar(panel, 545, 296, 79)
 	for i in range(Data.STATIONS.size()):
 		var station: Dictionary = Data.STATIONS[i]
-		_make_button(panel, "%0.1f" % float(station["freq"]), 194 + i * 81, 319, 75, 25, _preset.bind(i))
-	_make_label(panel, "ЗВУК", 538, 315, 9, Color("#a3b5b9"))
-	volume_slider = HSlider.new()
-	volume_slider.position = Vector2(539, 329)
-	volume_slider.size = Vector2(90, 18)
-	volume_slider.min_value = 0.0
-	volume_slider.max_value = 1.0
-	volume_slider.step = 0.05
-	volume_slider.value = radio.volume
-	volume_slider.value_changed.connect(_volume_changed)
-	panel.add_child(volume_slider)
-	radio_label = _make_label(panel, "", 12, 347, 10, Color("#dfcba7"))
-	_make_button(panel, "ТЕСТ", 569, 348, 58, 12, _send.bind("radio_test"))
+		_button(panel, "%0.1f" % float(station["freq"]), 12 + float(i) * 79.0, 317, 75, 26, _preset.bind(i))
+	_button(panel, "СЛУШАТЬ ЭФИР", 330, 317, 144, 26, _send.bind("radio_broadcast"))
+	_button(panel, "ТЕСТ", 479, 317, 75, 26, _send.bind("radio_test"))
+	volume_slider = _pixel_slider(panel, 558, 321, 67, 0.0, 1.0, 0.05, radio.volume, _volume_changed)
+	radio_label = _label(panel, "", 12, 347, 615, 10, Color("#e4c99e"))
 
-func _create_rest_panel(panel: Control) -> void:
-	_make_button(panel, "ЗАКУРИТЬ", 12, 288, 136, 31, _send.bind("smoke"))
-	_make_button(panel, "ЧАЙ ИЗ ТЕРМОСА", 156, 288, 162, 31, _send.bind("tea"))
-	_make_button(panel, "ПОДКИНУТЬ ДРОВ", 327, 288, 168, 31, _send.bind("coals"))
-	rest_label = _make_label(panel, "", 12, 326, 11, Color("#f2d7b1"))
-	_make_label(panel, "ФОН", 420, 345, 10, Color("#a9b5b8"))
-	ambience_slider = HSlider.new()
-	ambience_slider.position = Vector2(455, 338)
-	ambience_slider.size = Vector2(169, 18)
-	ambience_slider.min_value = 0.0
-	ambience_slider.max_value = 1.0
-	ambience_slider.step = 0.05
-	ambience_slider.value = soundscape.ambient_volume
-	ambience_slider.value_changed.connect(_ambient_changed)
-	panel.add_child(ambience_slider)
-	_make_label(panel, "Здесь нет заданий. Просто вечер, мангал и радио.", 12, 343, 10, Color("#a9b5b8"))
+func _make_rest(panel: Control) -> void:
+	_button(panel, "ЗАВАРИТЬ", 12, 285, 99, 28, _send.bind("brew"))
+	_button(panel, "НАЛИТЬ", 115, 285, 87, 28, _send.bind("pour"))
+	_button(panel, "ВЫПИТЬ", 206, 285, 87, 28, _send.bind("tea"))
+	_button(panel, "ЗАКУРИТЬ", 297, 285, 104, 28, _send.bind("smoke"))
+	_button(panel, "ПОТУШИТЬ", 405, 285, 104, 28, _send.bind("extinguish"))
+	_button(panel, "УБРАТЬ ПЕПЕЛ", 513, 285, 115, 28, _send.bind("empty_ashtray"))
+	rest_label = _label(panel, "", 12, 320, 612, 11, Color("#ffe0b2"))
+	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 341, 160, 9, Color("#a6b9b9"))
+	ambience_slider = _pixel_slider(panel, 169, 335, 188, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
+	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 366, 341, 258, 9, Color("#b2bdb9"))
 
-func _send(action_name: String) -> void:
-	request.emit(action_name, null)
+func _make_table(panel: Control) -> void:
+	_button(panel, "НА ТАРЕЛКУ", 12, 286, 131, 27, _send.bind("plate"))
+	_button(panel, "СЪЕСТЬ", 147, 286, 94, 27, _send.bind("eat"))
+	_button(panel, "АДЖИКА", 245, 286, 119, 27, _sauce.bind(0))
+	_button(panel, "КЕТЧУП", 368, 286, 119, 27, _sauce.bind(1))
+	_button(panel, "ГОРЧИЦА", 491, 286, 137, 27, _sauce.bind(2))
+	table_label = _label(panel, "", 12, 321, 612, 11, Color("#ffdeb2"))
+	_label(panel, "НАЖМИ НА ПРЕДМЕТЫ НА СТОЛЕ, ЧТОБЫ ВЗЯТЬ ИХ.", 12, 344, 610, 9, Color("#a7b9b9"))
+
+func _send(action: String) -> void:
+	request.emit(action, null)
 
 func _send_food() -> void:
 	request.emit("start", Data.FOOD_ORDER[food_picker.selected])
 
+func _sauce(index: int) -> void:
+	request.emit("sauce", index)
+
 func _preset(index: int) -> void:
 	request.emit("preset", index)
-	# Synchronize thumb without emitting a duplicate tuning request.
 	radio_slider.set_value_no_signal(float(Data.STATIONS[index]["freq"]))
+	radio_dial.set_frequency(float(Data.STATIONS[index]["freq"]))
 
 func _frequency_changed(mhz: float) -> void:
-	radio_dial.set_frequency(mhz)
 	radio_slider.set_value_no_signal(mhz)
+	radio_dial.set_frequency(mhz)
 	request.emit("frequency", mhz)
 
-func _volume_changed(value: float) -> void:
-	request.emit("volume", value)
+func _volume_changed(v: float) -> void:
+	request.emit("volume", v)
 
-func _ambient_changed(value: float) -> void:
-	request.emit("ambient", value)
+func _ambient_changed(v: float) -> void:
+	request.emit("ambient", v)
 
 func set_tab(index: int) -> void:
+	if index < 0 or index >= panels.size():
+		return
 	selected_tab = index
 	for i in range(panels.size()):
 		panels[i].visible = i == index
-		_apply_button_style(tabs[i], i == index)
+		_style(tabs[i], i == index)
 
 func hint(message: String, seconds: float = 3.0) -> void:
 	last_toast = message
@@ -270,29 +282,49 @@ func refresh() -> void:
 	var hour: int = int(state.time_minutes / 60.0)
 	var minute: int = int(state.time_minutes) % 60
 	time_label.text = "%02d:%02d" % [hour, minute]
-	hud_label.text = "УЮТ %d%% • %s • ПОРЦИЙ %d" % [int(state.comfort), state.time_phase_label(), state.servings]
-	# The atmosphere layer now handles darkness before the warm emissive glows.
-	dark_layer.color = Color(0.015, 0.035, 0.11, 0.0)
-	coal_label.text = "ЖАР: %d%%  %s" % [int(state.coals), "▰▰▰" if state.coals > 50 else "▰" if state.coals > 15 else "○"]
+	hud_label.text = "УЮТ %d%% • %s • ГОТОВО %d" % [int(state.comfort), state.time_phase_label(), state.servings]
+	coal_label.text = "ЖАР %d%%" % int(state.coals)
 	if state.current_food == "":
 		food_label.text = "ШАМПУРЫ СВОБОДНЫ"
-		progress_bar.value = 0.0
+		progress_bar.value = 0
 	else:
-		var a: float = state.side_a / state.current_target
-		var b: float = state.side_b / state.current_target
-		var result := "ПОДГОРЕЛО" if maxf(a, b) >= 1.9 else "ГОТОВО" if minf(a, b) >= 0.82 else "ЖАРИТСЯ"
-		food_label.text = "%s • %s • А %d%% / Б %d%%" % [state.current_food.to_upper(), result, int(a * 100.0), int(b * 100.0)]
+		var a: float = state.side_a / maxf(state.current_target, 0.1)
+		var b: float = state.side_b / maxf(state.current_target, 0.1)
+		var status := "ГОРИТ" if maxf(a, b) >= 1.9 else "ГОТОВО" if minf(a, b) >= 0.82 else "ЖАРИТСЯ"
+		food_label.text = "%s • %s • A %d%% / Б %d%%" % [state.current_food, status, int(a * 100), int(b * 100)]
 		progress_bar.value = clampf(minf(a, b) * 100.0, 0.0, 100.0)
-	radio_toggle.text = "РАДИО: ВКЛ" if radio.is_on else "РАДИО: ВЫКЛ"
-	radio_freq_label.text = "%0.1f MHz" % radio.frequency
-	var announcement: String = radio.broadcast_description()
-	radio_label.text = announcement.substr(0, 99) if announcement != "" else radio.station_description()
+	radio_toggle.text = "РАДИО ВКЛ" if radio.is_on else "РАДИО ВЫКЛ"
+	radio_freq_label.text = "%0.1f МГЦ" % radio.frequency
 	reception_bar.value = radio.reception * 100.0
-	rest_label.text = "УЮТ %d%%  |  ЧАЯ: %d  |  СИГАРЕТА: %s  |  ИСПОРЧЕНО: %d" % [int(state.comfort), state.tea_count, "%d c" % int(state.cigarette_left) if state.cigarette_left > 0.0 else "нет", state.spoiled]
-	# The test restores its own volume; update sliders only when changed from a button.
-	if not is_equal_approx(volume_slider.value, radio.volume):
-		volume_slider.set_value_no_signal(radio.volume)
+	var program: String = radio.broadcast_description()
+	radio_label.text = program if program != "" else radio.station_description()
 	if not is_equal_approx(radio_slider.value, radio.frequency):
 		radio_slider.set_value_no_signal(radio.frequency)
 	if not is_equal_approx(radio_dial.frequency, radio.frequency):
 		radio_dial.set_frequency(radio.frequency)
+	if not is_equal_approx(volume_slider.value, radio.volume):
+		volume_slider.set_value_no_signal(radio.volume)
+	rest_label.text = "%s • СИГАРЕТ %d • ОКУРКОВ %d • ЧАЙ ВЫПИТО %d" % [state.cup_description(), state.cigarettes_in_pack, state.ashtray_ash, state.tea_count]
+	var plate_info := "ТАРЕЛКА: ПУСТО" if state.plated_food == "" else "ТАРЕЛКА: %s %s" % [state.plated_food, state.plated_sauce]
+	table_label.text = "%s • ГОТОВЫХ ПОРЦИЙ %d • ЧИСТЫХ ТАРЕЛОК %d • СОУС %s" % [plate_info, state.unplated_portions, state.plates_clean, state.sauce_selected]
+
+func layout_errors() -> PackedStringArray:
+	# CI regression guard: every clickable region must be in the 640x360 viewport,
+	# and interactive elements on the currently visible tab must never overlap.
+	var issues := PackedStringArray()
+	var current := selected_tab
+	for t in range(panels.size()):
+		set_tab(t)
+		var visible_controls: Array[Control] = []
+		for control in interactive:
+			if not control.is_visible_in_tree():
+				continue
+			var rect: Rect2 = control.get_global_rect()
+			if rect.position.x < -0.01 or rect.position.y < -0.01 or rect.end.x > 640.01 or rect.end.y > 360.01:
+				issues.append("Out of bounds: " + str(control))
+			for other in visible_controls:
+				if rect.intersects(other.get_global_rect()):
+					issues.append("Overlap: %s and %s at tab %d" % [control.name, other.name, t])
+			visible_controls.append(control)
+	set_tab(current)
+	return issues
