@@ -198,7 +198,7 @@ func _make_radio(panel: Control) -> void:
 	radio_dial = RadioDial.new()
 	radio_dial.name = "TuningKnob"
 	radio_dial.position = Vector2(110, 277)
-	radio_dial.size = Vector2(57, 57)
+	radio_dial.size = Vector2(50, 38)
 	radio_dial.set_frequency(radio.frequency)
 	radio_dial.turned.connect(_frequency_changed)
 	panel.add_child(radio_dial)
@@ -224,9 +224,9 @@ func _make_rest(panel: Control) -> void:
 	_button(panel, "ПОТУШИТЬ", 405, 285, 104, 28, _send.bind("extinguish"))
 	_button(panel, "УБРАТЬ ПЕПЕЛ", 513, 285, 115, 28, _send.bind("empty_ashtray"))
 	rest_label = _label(panel, "", 12, 320, 612, 11, Color("#ffe0b2"))
-	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 341, 160, 9, Color("#a6b9b9"))
-	ambience_slider = _pixel_slider(panel, 169, 335, 188, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
-	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 366, 341, 258, 9, Color("#b2bdb9"))
+	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 341, 170, 9, Color("#a6b9b9"))
+	ambience_slider = _pixel_slider(panel, 188, 338, 174, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
+	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 370, 341, 254, 9, Color("#b2bdb9"))
 
 func _make_table(panel: Control) -> void:
 	_button(panel, "НА ТАРЕЛКУ", 12, 286, 131, 27, _send.bind("plate"))

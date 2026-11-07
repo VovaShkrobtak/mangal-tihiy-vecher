@@ -48,15 +48,75 @@ func run_test() -> void:
 	if hud.panels.size() < 2 or hud.panels[1].get_node_or_null("TuningKnob") == null:
 		fail("Cannot find tuning knob on radio panel")
 		return
+	var visual: Node = main.get_node("TableProps")
+	if visual.call("hit_test", Vector2(105, 182)) != "cup":
+		fail("Cup hitbox is missing")
+		return
+	var missing_font: Font = hud.get("pixel_font")
+	if missing_font == null:
+		fail("Pixel Cyrillic font is missing")
+		return
+	if missing_font.get_glyph_list(0, Vector2i(8, 0)).size() < 70:
+		fail("Pixel font has too few glyphs")
+		return
+	var ui_issues: PackedStringArray = hud.call("layout_errors")
+	if not ui_issues.is_empty():
+		fail("HUD overlaps or clips: " + ", ".join(ui_issues))
+		return
 	if hud.get("food_picker") == null:
 		fail("Grill interface is missing")
+		return
+	state.call("brew_tea")
+	if float(state.get("kettle_brewing")) <= 0.0:
+		fail("Tea did not start brewing")
+		return
+	state.call("_process", 13.0)
+	if int(state.get("kettle_portions")) != 3:
+		fail("Kettle did not become ready")
+		return
+	state.call("pour_tea")
+	if not bool(state.get("cup_filled")):
+		fail("Cup was not filled")
+		return
+	state.call("drink_tea")
+	if bool(state.get("cup_filled")) or int(state.get("tea_count")) <= 0:
+		fail("Drinking tea failed")
+		return
+	state.call("smoke")
+	if int(state.get("cigarettes_in_pack")) >= 12:
+		fail("Smoking did not consume a cigarette")
+		return
+	state.call("extinguish_cigarette")
+	if int(state.get("ashtray_ash")) <= 0:
+		fail("Ashtray did not receive the cigarette")
+		return
+	state.call("empty_ashtray")
+	if int(state.get("ashtray_ash")) != 0:
+		fail("Ashtray could not be emptied")
 		return
 	state.call("start_food", "Свинина")
 	if String(state.get("current_food")) != "Свинина":
 		fail("Grill did not accept a food choice")
 		return
 	state.call("flip_food")
+	state.set("side_a", float(state.get("current_target")))
+	state.set("side_b", float(state.get("current_target")))
 	state.call("take_food")
+	if int(state.get("unplated_portions")) < 1:
+		fail("Finished food not available to plate")
+		return
+	state.call("put_on_plate")
+	if String(state.get("plated_food")) == "":
+		fail("Serving a plate failed")
+		return
+	state.call("choose_sauce", 1)
+	if String(state.get("plated_sauce")) != "Кетчуп":
+		fail("Applying sauce failed")
+		return
+	state.call("eat_plate")
+	if int(state.get("eaten_portions")) < 1:
+		fail("Eating from a plate failed")
+		return
 	state.call("smoke")
 	if float(state.get("cigarette_left")) < 1.0:
 		fail("Cigarette mechanic failed")

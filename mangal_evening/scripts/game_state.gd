@@ -42,8 +42,9 @@ func _process(delta: float) -> void:
 	time_minutes = fmod(time_minutes + delta * 1.65, 1440.0)
 	coals = maxf(0.0, coals - delta * (0.10 + (0.08 if current_food != "" else 0.0)))
 	fan_boost = maxf(0.0, fan_boost - delta * 2.0)
+	var was_brewing: bool = kettle_brewing > 0.0
 	kettle_brewing = maxf(0.0, kettle_brewing - delta)
-	if kettle_brewing > 0.0 and kettle_brewing <= delta:
+	if was_brewing and kettle_brewing <= 0.0:
 		kettle_portions = 3
 		notify("Чай настоялся. Хватит на три кружки.")
 	var was_lit := cigarette_left > 0.0
