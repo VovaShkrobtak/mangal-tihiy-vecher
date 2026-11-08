@@ -8,7 +8,6 @@ extends Node2D
 @onready var atmosphere = $Atmosphere
 @onready var table_props = $TableProps
 @onready var radio_indicator = $RadioIndicator
-@onready var vintage_radio = $VintageRadio
 @onready var hud = $HUD
 var ui_tick := 0.0
 
@@ -24,7 +23,6 @@ func _ready() -> void:
 	atmosphere.state = state
 	table_props.state = state
 	radio_indicator.radio = radio
-	vintage_radio.radio = radio
 	state.message.connect(_on_message)
 	hud.request.connect(_on_action)
 	hud.setup(state, radio, soundscape)
