@@ -33,4 +33,20 @@ func make_previews() -> void:
 			quit(1)
 			return
 		print("HUD_PREVIEW_SAVED: " + path + " %dx%d" % [image.get_width(), image.get_height()])
+	# Extra regression shot: the exact case from the user's screenshot, a long
+	# on-air message while the radio tab is open.
+	var radio: Node = game.get_node("Radio")
+	radio.call("test_station")
+	radio.call("request_broadcast")
+	hud.call("set_tab", 1)
+	hud.call("hint", "", 0.0)
+	await process_frame
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var message_frame: Image = root.get_texture().get_image()
+	if message_frame.is_empty() or message_frame.save_png("res://artifacts/hud_4_broadcast.png") != OK:
+		push_error("Could not capture long radio broadcast")
+		quit(1)
+		return
+	print("HUD_PREVIEW_SAVED: radio with live announcement")
 	quit(0)
