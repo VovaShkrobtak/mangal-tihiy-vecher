@@ -61,6 +61,19 @@ func run_test() -> void:
 	if visual.call("hit_test", Vector2(105, 182)) != "cup":
 		fail("Cup hitbox is missing")
 		return
+	if main.get_node_or_null("GroundedGarages") == null or main.get_node_or_null("GroundedPole") == null:
+		fail("Separated garages and pole are missing")
+		return
+	if main.get_node_or_null("VintageRadio") == null:
+		fail("Retro radio visual is missing")
+		return
+	for part in ["Newspaper", "Plate", "Cup", "Cigarettes", "Ashtray", "Kettle", "Sauces"]:
+		if visual.get_node_or_null(part) == null:
+			fail("Separate tabletop node missing: " + part)
+			return
+	if visual.call("hit_test", visual.get_node("Kettle").global_position + Vector2(15,18)) != "kettle":
+		fail("The kettle's drawn position and hitbox do not match")
+		return
 	var missing_font: Font = hud.get("pixel_font")
 	if missing_font == null:
 		fail("Pixel Cyrillic font is missing")

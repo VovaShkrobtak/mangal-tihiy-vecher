@@ -36,7 +36,6 @@ func _draw() -> void:
 	_draw_fireflies()
 	_draw_coals_and_flames()
 	_draw_skewer()
-	_draw_radio_light()
 	_draw_cigarette()
 	_draw_smoke()
 
@@ -93,16 +92,6 @@ func _draw_skewer() -> void:
 				_pixel_rect(x + 8, y - 3, 3, 5, Color("#56804a"))
 			if t > 0.36:
 				_pixel_rect(x + 4, y, 4, 1, Color("#38241e"))
-
-func _draw_radio_light() -> void:
-	if radio != null and radio.is_on:
-		_pixel_rect(559, 142, 5, 3, Color("#ffcc6b"))
-		if radio.active_station >= 0:
-			_pixel_rect(569, 142, 9, 3, Color("#8fe2a3"))
-		else:
-			_pixel_rect(569, 142, 9, 3, Color("#ce6753"))
-	else:
-		_pixel_rect(559, 142, 5, 3, Color("#554a4a"))
 
 func _draw_cigarette() -> void:
 	if state.cigarette_left <= 0.0:

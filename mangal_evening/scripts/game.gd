@@ -7,6 +7,7 @@ extends Node2D
 @onready var world = $AnimatedWorld
 @onready var atmosphere = $Atmosphere
 @onready var table_props = $TableProps
+@onready var vintage_radio = $VintageRadio
 @onready var hud = $HUD
 var ui_tick := 0.0
 
@@ -21,6 +22,7 @@ func _ready() -> void:
 	world.radio = radio
 	atmosphere.state = state
 	table_props.state = state
+	vintage_radio.radio = radio
 	state.message.connect(_on_message)
 	hud.request.connect(_on_action)
 	hud.setup(state, radio, soundscape)
@@ -99,7 +101,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_click_world(event.position)
 
 func _click_world(p: Vector2) -> void:
-	if p.y >= 250.0 or p.y < 35.0:
+	if p.y >= 212.0 or p.y < 35.0:
 		return
 	var prop: String = table_props.hit_test(p)
 	if prop != "":
@@ -141,5 +143,5 @@ func _click_world(p: Vector2) -> void:
 			hud.hint("Мангал горячий. Выбирай продукт в меню!")
 	elif p.x >= 495.0 and p.x <= 615.0 and p.y >= 115.0 and p.y <= 218.0:
 		hud.set_tab(1)
-	elif p.x >= 117.0 and p.x <= 208.0 and p.y >= 111.0 and p.y <= 215.0:
+	elif p.x >= 140.0 and p.x <= 198.0 and p.y >= 122.0 and p.y <= 210.0:
 		hud.set_tab(2)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Texture2D" path="res://assets/backyard.png" id="2_background"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://scripts/atmosphere.gd" id="8_atmosphere"]
 [ext_resource type="Script" path="res://scripts/table_props.gd" id="9_props"]
+[ext_resource type="Script" path="res://scripts/yard_object.gd" id="10_yard"]
 
 [node name="MangalEvening" type="Node2D"]
 script = ExtResource("1_game")
@@ -17,6 +18,41 @@ script = ExtResource("1_game")
 texture_filter = 1
 centered = false
 texture = ExtResource("2_background")
+
+[node name="SkyPatch" type="Node2D" parent="."]
+position = Vector2(201, 55)
+script = ExtResource("10_yard")
+object_kind = "background_patch"
+
+[node name="GroundedGarages" type="Node2D" parent="."]
+position = Vector2(215, 107)
+script = ExtResource("10_yard")
+object_kind = "garages"
+
+[node name="GroundedPole" type="Node2D" parent="."]
+position = Vector2(455, 65)
+script = ExtResource("10_yard")
+object_kind = "pole"
+
+[node name="TablePatch" type="Node2D" parent="."]
+position = Vector2(20, 137)
+script = ExtResource("10_yard")
+object_kind = "table_patch"
+
+[node name="PicnicTable" type="Node2D" parent="."]
+position = Vector2(19, 167)
+script = ExtResource("10_yard")
+object_kind = "table"
+
+[node name="SeatedPerson" type="Node2D" parent="."]
+position = Vector2(151, 143)
+script = ExtResource("10_yard")
+object_kind = "person"
+
+[node name="VintageRadio" type="Node2D" parent="."]
+position = Vector2(516, 116)
+script = ExtResource("10_yard")
+object_kind = "radio"
 
 [node name="GameState" type="Node" parent="."]
 script = ExtResource("3_state")
@@ -35,6 +71,42 @@ script = ExtResource("8_atmosphere")
 
 [node name="TableProps" type="Node2D" parent="."]
 script = ExtResource("9_props")
+
+[node name="Newspaper" type="Node2D" parent="TableProps"]
+position = Vector2(35, 189)
+script = ExtResource("10_yard")
+object_kind = "newspaper"
+
+[node name="Plate" type="Node2D" parent="TableProps"]
+position = Vector2(44, 192)
+script = ExtResource("10_yard")
+object_kind = "plate"
+
+[node name="Cup" type="Node2D" parent="TableProps"]
+position = Vector2(95, 176)
+script = ExtResource("10_yard")
+object_kind = "cup"
+
+[node name="Cigarettes" type="Node2D" parent="TableProps"]
+position = Vector2(131, 185)
+script = ExtResource("10_yard")
+object_kind = "cigarettes"
+
+[node name="Ashtray" type="Node2D" parent="TableProps"]
+position = Vector2(158, 185)
+script = ExtResource("10_yard")
+object_kind = "ashtray"
+
+[node name="Kettle" type="Node2D" parent="TableProps"]
+position = Vector2(207, 155)
+script = ExtResource("10_yard")
+object_kind = "kettle"
+
+[node name="Sauces" type="Node2D" parent="TableProps"]
+position = Vector2(249, 174)
+script = ExtResource("10_yard")
+object_kind = "sauce"
+
 
 [node name="HUD" type="Control" parent="."]
 mouse_filter = 2
