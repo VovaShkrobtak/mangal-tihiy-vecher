@@ -235,7 +235,7 @@ func _make_rest(panel: Control) -> void:
 	_button(panel, "УБРАТЬ ПЕПЕЛ", 513, 285, 115, 28, _send.bind("empty_ashtray"))
 	rest_label = _label(panel, "", 12, 320, 612, 11, Color("#ffe0b2"))
 	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 338, 170, 9, Color("#a6b9b9"))
-	ambience_slider = _pixel_slider(panel, 188, 338, 174, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
+	ambience_slider = _pixel_slider(panel, 188, 334, 174, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
 	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 370, 338, 254, 9, Color("#b2bdb9"))
 
 func _make_table(panel: Control) -> void:
