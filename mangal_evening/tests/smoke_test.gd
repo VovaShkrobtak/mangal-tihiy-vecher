@@ -61,7 +61,7 @@ func run_test() -> void:
 	for tex_name in ["backdrop", "garages", "utility_pole", "table", "person", "grill", "radio",
 		"cup", "cup_tea", "kettle", "kettle_steam", "plate", "plate_full",
 		"cigarettes", "ashtray", "ashtray_full", "newspaper", "sauces"]:
-		var texture_path := "res://assets/scene_layers/" + tex_name + ".png"
+		var texture_path: String = "res://assets/scene_layers/" + String(tex_name) + ".png"
 		if not ResourceLoader.exists(texture_path):
 			fail("Mobile-safe PNG sprite is missing: " + texture_path)
 			return
