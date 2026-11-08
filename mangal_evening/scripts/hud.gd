@@ -7,6 +7,7 @@ const Data = preload("res://scripts/data.gd")
 const PixelFont = preload("res://scripts/pixel_font.gd")
 const PixelSlider = preload("res://scripts/pixel_slider.gd")
 const PixelMeter = preload("res://scripts/pixel_meter.gd")
+const PixelCaption = preload("res://scripts/pixel_caption.gd")
 const RadioDial = preload("res://scripts/radio_dial.gd")
 
 var state = null
@@ -16,16 +17,16 @@ var selected_tab := 0
 var toast_timer := 0.0
 var last_toast := "Добро пожаловать во двор. Выбери предмет или действие."
 
-var hud_label: Label
-var time_label: Label
-var hint_label: Label
-var coal_label: Label
-var food_label: Label
+var hud_label: Variant = null
+var time_label: Variant = null
+var hint_label: Variant = null
+var coal_label: Variant = null
+var food_label: Variant = null
 var progress_bar: Control
-var radio_label: Label
-var radio_freq_label: Label
-var rest_label: Label
-var table_label: Label
+var radio_label: Variant = null
+var radio_freq_label: Variant = null
+var rest_label: Variant = null
+var table_label: Variant = null
 var radio_slider: Control
 var volume_slider: Control
 var ambience_slider: Control
@@ -37,7 +38,7 @@ var panels: Array[Control] = []
 var tabs: Array[Button] = []
 var interactive: Array[Control] = []
 var pixel_font: FontFile
-var ui_labels: Array[Label] = []
+var ui_labels: Array[Control] = []
 
 func setup(game_state: Node, tuner: Node, ambience: Node) -> void:
 	state = game_state
@@ -69,16 +70,15 @@ func _one_line(message: String, limit: int = 88) -> String:
 		cutoff = limit - 3
 	return line.substr(0, cutoff).strip_edges() + "..."
 
-func _label(parent: Node, txt: String, x: float, y: float, width: float, font_size: int = 11, color: Color = Color("#f2ddbc")) -> Label:
-	var l := Label.new()
+func _label(parent: Node, txt: String, x: float, y: float, width: float, font_size: int = 11, color: Color = Color("#f2ddbc")) -> Control:
+	var l := PixelCaption.new()
 	l.text = txt
 	l.position = Vector2(x, y)
 	l.size = Vector2(width, 13)
-	l.clip_text = true
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	l.add_theme_font_override("font", pixel_font)
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", color)
+	l.font = pixel_font
+	l.font_size = font_size
+	l.font_color = color
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(l)
 	ui_labels.append(l)
 	return l
@@ -342,7 +342,7 @@ func layout_errors() -> PackedStringArray:
 			continue
 		var lr: Rect2 = label.get_global_rect()
 		if lr.position.y < 0.0 or lr.end.y > 354.01:
-			issues.append("Label clipped vertically: %s at %s" % [label.text, str(lr)])
+			issues.append("Label clipped vertically: %s at %s" % [String(label.get("text")), str(lr)])
 	# Native ProgressBar's theme minimum-size can silently inflate its height.
 	if reception_bar.size.y > 10.0 or progress_bar.size.y > 10.0:
 		issues.append("A pixel meter grew beyond the requested 8px")
