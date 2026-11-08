@@ -57,6 +57,21 @@ func run_test() -> void:
 	if hud.panels.size() < 2 or hud.panels[1].get_node_or_null("TuningKnob") == null:
 		fail("Cannot find tuning knob on radio panel")
 		return
+	# Android Godot must use raster textures, not SVG imports.
+	for tex_name in ["backdrop", "garages", "utility_pole", "table", "person", "grill", "radio",
+		"cup", "cup_tea", "kettle", "kettle_steam", "plate", "plate_full",
+		"cigarettes", "ashtray", "ashtray_full", "newspaper", "sauces"]:
+		var texture_path := "res://assets/scene_layers/" + tex_name + ".png"
+		if not ResourceLoader.exists(texture_path):
+			fail("Mobile-safe PNG sprite is missing: " + texture_path)
+			return
+	var backdrop_sprite: Sprite2D = main.get_node("Backdrop")
+	if backdrop_sprite.texture.resource_path.get_extension().to_lower() != "png":
+		fail("Background still uses SVG texture; Android may not render it")
+		return
+	if backdrop_sprite.texture.get_width() != 640 or backdrop_sprite.texture.get_height() != 247:
+		fail("Background PNG has wrong dimensions")
+		return
 	# The dacha scene must contain independent Sprite2D layers.
 	for name in ["Backdrop", "Garages", "UtilityPole", "Table", "Person", "Grill", "RadioProp"]:
 		var sprite: Node = main.get_node_or_null(name)

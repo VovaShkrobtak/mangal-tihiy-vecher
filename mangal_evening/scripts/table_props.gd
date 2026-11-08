@@ -22,7 +22,7 @@ func _variant(node_name: String, asset_name: String) -> void:
 	if _shown.get(node_name, "") == asset_name:
 		return
 	var sprite: Sprite2D = get_node(node_name)
-	sprite.texture = load(BASE + asset_name + ".svg")
+	sprite.texture = load(BASE + asset_name + ".png")
 	_shown[node_name] = asset_name
 
 func hit_test(world_point: Vector2) -> String:
