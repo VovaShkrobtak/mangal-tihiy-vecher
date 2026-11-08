@@ -33,7 +33,9 @@ func _draw() -> void:
 func draw_background_patch() -> void:
 	# Old floating garage tops & pole are hidden before drawing grounded replacements.
 	for y in range(73):
-		var color := Color("#31374c") if y < 39 else Color("#344052") if y < 55 else Color("#2c413d")
+		# Match the original evening sky at BOTH patch edges; avoids a dark rectangle.
+		var blend: float = clampf(float(y) / 73.0, 0.0, 1.0)
+		var color: Color = Color8(39, 46, 75).lerp(Color8(66, 63, 92), blend)
 		rect(0, float(y), 274, 1, color)
 	draw_colored_polygon(PackedVector2Array([Vector2(0,57),Vector2(37,42),Vector2(81,56),Vector2(110,44),Vector2(164,61),Vector2(214,46),Vector2(274,56),Vector2(274,76),Vector2(0,76)]),Color("#293c47"))
 	for i in range(16):
