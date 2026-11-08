@@ -79,10 +79,10 @@ func run_test() -> void:
 	if visual.call("hit_test", Vector2(105, 182)) != "cup":
 		fail("Cup hitbox is missing")
 		return
-	if main.get_node_or_null("GroundedGarages") == null or main.get_node_or_null("GroundedPole") == null:
+	if main.get_node_or_null("Garages") == null or main.get_node_or_null("UtilityPole") == null:
 		fail("Separated garages and pole are missing")
 		return
-	if main.get_node_or_null("VintageRadio") == null:
+	if main.get_node_or_null("RadioProp") == null:
 		fail("Retro radio visual is missing")
 		return
 	for part in ["Newspaper", "Plate", "Cup", "Cigarettes", "Ashtray", "Kettle", "Sauces"]:
