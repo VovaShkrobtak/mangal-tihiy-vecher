@@ -1,0 +1,54 @@
+name: Bake mobile-safe PNG scene art
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bake-scene-png.yml"
+      - "mangal_evening/assets/scene_layers/*.svg"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rasterize-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Install SVG rasterizer
+        run: sudo apt-get update -qq && sudo apt-get install -y librsvg2-bin
+      - name: Export all 18 sprites as portable 1:1 PNG
+        run: |
+          set -euo pipefail
+          for svg in mangal_evening/assets/scene_layers/*.svg; do
+            rsvg-convert "$svg" -o "${svg%.svg}.png"
+            echo "BAKED: ${svg%.svg}.png"
+          done
+          python3 - <<'PY'
+          import glob, struct
+          files = glob.glob('mangal_evening/assets/scene_layers/*.png')
+          assert len(files) >= 18, f'Expected 18 PNG sprites, got {len(files)}'
+          for path in files:
+              with open(path, 'rb') as f:
+                  header = f.read(24)
+              assert header[:8] == b'\x89PNG\r\n\x1a\n', f'Invalid PNG: {path}'
+              w, h = struct.unpack('>II', header[16:24])
+              assert 1 <= w <= 640 and 1 <= h <= 247, f'Unexpected dimensions {path}: {w}x{h}'
+              print(f'VALID: {path} ({w}x{h})')
+          PY
+      - name: Commit generated PNG assets
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mangal_evening/assets/scene_layers/*.png
+          if git diff --cached --quiet; then
+            echo "PNG assets already up to date"
+          else
+            git commit -m "Bake separate scene sprites to PNG for Android compatibility"
+            git push origin HEAD:main
+          fi
