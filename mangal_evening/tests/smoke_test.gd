@@ -57,7 +57,25 @@ func run_test() -> void:
 	if hud.panels.size() < 2 or hud.panels[1].get_node_or_null("TuningKnob") == null:
 		fail("Cannot find tuning knob on radio panel")
 		return
+	# The dacha scene must contain independent Sprite2D layers.
+	for name in ["Backdrop", "Garages", "UtilityPole", "Table", "Person", "Grill", "RadioProp"]:
+		var sprite: Node = main.get_node_or_null(name)
+		if not (sprite is Sprite2D) or (sprite as Sprite2D).texture == null:
+			fail("Missing independent visual sprite: " + name)
+			return
+	var garages: Sprite2D = main.get_node("Garages")
+	var pole: Sprite2D = main.get_node("UtilityPole")
+	if garages.position.y < 100.0 or pole.position.y < 60.0:
+		fail("Floating garage or utility pole")
+		return
+	if main.get_node("RadioIndicator").get("radio") != radio:
+		fail("Radio LED is not connected to radio state")
+		return
 	var visual: Node = main.get_node("TableProps")
+	for item in ["Cup", "Kettle", "Newspaper", "Cigarettes", "Ashtray", "Plate", "Sauces"]:
+		if not (visual.get_node_or_null(item) is Sprite2D):
+			fail("Movable tabletop sprite missing: " + item)
+			return
 	if visual.call("hit_test", Vector2(105, 182)) != "cup":
 		fail("Cup hitbox is missing")
 		return

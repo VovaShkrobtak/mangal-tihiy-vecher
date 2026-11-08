@@ -132,3 +132,7 @@ bash publish_to_github.sh
 Вместо прежних перегруженных панелей — 4 вкладки: «Мангал [G]», «Радио [R]», «Чай/табак [T]», «Стол [P]». Элементы управления размещены в пределах экрана 640×360. Для заголовков, кнопок и подсказок создан оригинальный процедурный пиксельный шрифт с кириллицей, без внешних TTF. Стандартные HSlider заменены на PixelSlider с мышью, колесом, клавиатурой и сенсорными жестами. Кнопки получили прямые углы.
 
 Smoke-тест проверяет таблицу шрифтовых глифов, пересечения/выход интерактивных элементов за экран, приготовление чая, сигареты, пепельницу, подачу блюда и применение соусов.
+
+
+## Independent pixel-art scene objects
+All art objects are separate, editable Godot Sprite2D nodes using pixel-aligned SVG files from assets/scene_layers/. The sky, hillside, fence, garland, moon and shed live in Backdrop; grounded Garages and UtilityPole are separate. Table, Person, Grill and RadioProp are movable sprites. Cup, Kettle, Newspaper, Cigarettes, Plate, Ashtray and Sauces are individual TableProps children with hit testing based on actual sprite geometry. Cup, kettle, plate and ashtray automatically switch their texture variants when game state changes. RadioIndicator is the sole LED overlay on the standalone radio; the formerly duplicated radio painting is no longer used. Original gameplay mechanics, pixel HUD, and saved progress are preserved.
