@@ -17,3 +17,15 @@ jobs:
         run: godot --headless --editor --path mangal_evening --quit
       - name: Smoke-test audio and gameplay
         run: godot --headless --path mangal_evening --script res://tests/smoke_test.gd
+      - name: Install virtual display for visual regression captures
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb
+      - name: Capture actual rendered HUD tabs
+        run: xvfb-run -a godot --path mangal_evening --script res://tests/capture_hud.gd
+      - name: Upload HUD previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-hud-preview
+          path: mangal_evening/artifacts/*.png
+          if-no-files-found: warn
+
