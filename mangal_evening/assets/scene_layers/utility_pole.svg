@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="29" height="120" viewBox="0 0 29 120" shape-rendering="crispEdges">
+<rect x="9" y="11" width="5" height="103" fill="#774c2f"/>
+<rect x="11" y="11" width="2" height="103" fill="#a17043"/>
+<rect x="3" y="24" width="20" height="3" fill="#80543c"/>
+<rect x="5" y="34" width="18" height="2" fill="#80543c"/>
+<rect x="5" y="23" width="2" height="4" fill="#c2c7bb"/>
+<rect x="17" y="23" width="2" height="4" fill="#c2c7bb"/>
+<rect x="5" y="33" width="2" height="3" fill="#d6d1be"/>
+<rect x="17" y="33" width="2" height="3" fill="#d6d1be"/>
+<path d="M0 114 L25 114 L28 120 L0 120Z" fill="#3c5939"/>
+<polyline points="11,26 28,33" stroke="#37373d" stroke-width="1" fill="none"/>
+<polyline points="10,35 27,45" stroke="#35373c" stroke-width="1" fill="none"/>
+</svg>
