@@ -330,21 +330,23 @@ func layout_errors() -> PackedStringArray:
 			if not control.is_visible_in_tree():
 				continue
 			var rect: Rect2 = control.get_global_rect()
-			if rect.position.x < -0.01 or rect.position.y < -0.01 or rect.end.x > 640.01 or rect.end.y > 360.01:
-				issues.append("Out of bounds: " + str(control))
+			if rect.position.x < -0.01 or rect.position.y < -0.01 or rect.end.x > 640.01 or rect.end.y > 354.01:
+				issues.append("Interactive control out of safe area: " + str(control))
 			for other in visible_controls:
 				if rect.intersects(other.get_global_rect()):
 					issues.append("Overlap: %s %s and %s %s at tab %d" % [control.name, str(rect), other.name, str(other.get_global_rect()), t])
 			visible_controls.append(control)
-	# Labels must not be truncated by the bottom of the game viewport.
-	for label in ui_labels:
-		if not label.is_visible_in_tree():
-			continue
-		var lr: Rect2 = label.get_global_rect()
-		if lr.position.y < 0.0 or lr.end.y > 354.01:
-			issues.append("Label clipped vertically: %s at %s" % [String(label.get("text")), str(lr)])
-	# Native ProgressBar's theme minimum-size can silently inflate its height.
+		# Check every visible text line on every tab, not just the last tab.
+		for label in ui_labels:
+			if not label.is_visible_in_tree():
+				continue
+			var lr: Rect2 = label.get_global_rect()
+			if lr.position.x < 0.0 or lr.end.x > 640.01 or lr.position.y < 0.0 or lr.end.y > 354.01:
+				issues.append("Caption clipped on tab %d: %s at %s" % [t, String(label.get("text")), str(lr)])
+	# Native ProgressBar's theme minimum size used to inflate this to >25px.
 	if reception_bar.size.y > 10.0 or progress_bar.size.y > 10.0:
 		issues.append("A pixel meter grew beyond the requested 8px")
+	if reception_bar.position.y + reception_bar.size.y > 354.0:
+		issues.append("Signal meter extends outside radio panel")
 	set_tab(current)
 	return issues
