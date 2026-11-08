@@ -38,9 +38,18 @@ func run_test() -> void:
 		fail("Living ambient audio player is missing")
 		return
 	var dial: Control = hud.get("radio_dial")
-	var strength: ProgressBar = hud.get("reception_bar")
+	var strength: Control = hud.get("reception_bar")
 	if dial == null or strength == null:
 		fail("Analogue tuning controls are missing")
+		return
+	if strength is ProgressBar:
+		fail("Native ProgressBar was not replaced by a fixed pixel meter")
+		return
+	if strength.size.y > 10.0:
+		fail("Signal meter ignores 8px visual bounds")
+		return
+	if hud.get("radio_label") != null:
+		fail("Radio announcements are duplicated at the bottom edge")
 		return
 	if hud.get_node_or_null("TuningKnob") != null:
 		fail("Radio dial must live in the radio tab")

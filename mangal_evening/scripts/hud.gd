@@ -6,6 +6,7 @@ signal request(action_name: String, payload: Variant)
 const Data = preload("res://scripts/data.gd")
 const PixelFont = preload("res://scripts/pixel_font.gd")
 const PixelSlider = preload("res://scripts/pixel_slider.gd")
+const PixelMeter = preload("res://scripts/pixel_meter.gd")
 const RadioDial = preload("res://scripts/radio_dial.gd")
 
 var state = null
@@ -20,7 +21,7 @@ var time_label: Label
 var hint_label: Label
 var coal_label: Label
 var food_label: Label
-var progress_bar: ProgressBar
+var progress_bar: Control
 var radio_label: Label
 var radio_freq_label: Label
 var rest_label: Label
@@ -29,13 +30,14 @@ var radio_slider: Control
 var volume_slider: Control
 var ambience_slider: Control
 var radio_dial: Control
-var reception_bar: ProgressBar
+var reception_bar: Control
 var radio_toggle: Button
 var food_picker: OptionButton
 var panels: Array[Control] = []
 var tabs: Array[Button] = []
 var interactive: Array[Control] = []
 var pixel_font: FontFile
+var ui_labels: Array[Label] = []
 
 func setup(game_state: Node, tuner: Node, ambience: Node) -> void:
 	state = game_state
@@ -52,18 +54,33 @@ func _process(delta: float) -> void:
 	toast_timer = maxf(0.0, toast_timer - delta)
 	if toast_timer <= 0.0 and hint_label != null:
 		var speech: String = radio.broadcast_description()
-		hint_label.text = ("РАДИО: " + speech) if speech != "" else "КАСАНИЕ: СТОЛ — ПРЕДМЕТЫ, МАНГАЛ — ШАМПУРЫ, РАДИО — ВОЛНА."
+		if selected_tab == 1:
+			var station_line: String = speech if speech != "" else radio.station_description()
+			hint_label.text = _one_line("РАДИО: " + station_line, 90)
+		else:
+			hint_label.text = "КАСАНИЕ: ПРЕДМЕТЫ НА СТОЛЕ, МАНГАЛ, РАДИО. ВЫБЕРИ ВКЛАДКУ."
+
+func _one_line(message: String, limit: int = 88) -> String:
+	var line: String = message.replace("\n", " ").strip_edges()
+	if line.length() <= limit:
+		return line
+	var cutoff: int = line.rfind(" ", limit - 4)
+	if cutoff < limit / 2:
+		cutoff = limit - 3
+	return line.substr(0, cutoff).strip_edges() + "..."
 
 func _label(parent: Node, txt: String, x: float, y: float, width: float, font_size: int = 11, color: Color = Color("#f2ddbc")) -> Label:
 	var l := Label.new()
 	l.text = txt
 	l.position = Vector2(x, y)
-	l.size = Vector2(width, 18)
+	l.size = Vector2(width, 13)
 	l.clip_text = true
+	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	l.add_theme_font_override("font", pixel_font)
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	parent.add_child(l)
+	ui_labels.append(l)
 	return l
 
 func _style(button: Button, active: bool = false) -> void:
@@ -112,21 +129,12 @@ func _pixel_slider(parent: Node, x: float, y: float, w: float, min_value: float,
 	interactive.append(slider)
 	return slider
 
-func _bar(parent: Node, x: float, y: float, w: float) -> ProgressBar:
-	var bar := ProgressBar.new()
+func _bar(parent: Node, x: float, y: float, w: float) -> Control:
+	var bar := PixelMeter.new()
+	bar.name = "PixelMeter"
 	bar.position = Vector2(x, y)
 	bar.size = Vector2(w, 8)
-	bar.max_value = 100.0
-	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color("#16262c")
-	bg.set_corner_radius_all(0)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = Color("#dfa15d")
-	fill.set_corner_radius_all(0)
-	bar.add_theme_stylebox_override("background", bg)
-	bar.add_theme_stylebox_override("fill", fill)
 	parent.add_child(bar)
 	return bar
 
@@ -191,7 +199,7 @@ func _make_grill(panel: Control) -> void:
 	_button(panel, "РАЗДУТЬ", 547, 291, 81, 27, _send.bind("fan"))
 	coal_label = _label(panel, "", 12, 326, 127, 11, Color("#ffce92"))
 	food_label = _label(panel, "", 144, 326, 480, 11, Color("#e9d7bd"))
-	progress_bar = _bar(panel, 144, 347, 480)
+	progress_bar = _bar(panel, 144, 343, 480)
 
 func _make_radio(panel: Control) -> void:
 	radio_toggle = _button(panel, "РАДИО ВКЛ", 12, 284, 95, 26, _send.bind("power"))
@@ -213,8 +221,10 @@ func _make_radio(panel: Control) -> void:
 		_button(panel, "%0.1f" % float(station["freq"]), 12 + float(i) * 79.0, 317, 75, 26, _preset.bind(i))
 	_button(panel, "СЛУШАТЬ ЭФИР", 330, 317, 144, 26, _send.bind("radio_broadcast"))
 	_button(panel, "ТЕСТ", 479, 317, 75, 26, _send.bind("radio_test"))
-	volume_slider = _pixel_slider(panel, 558, 321, 67, 0.0, 1.0, 0.05, radio.volume, _volume_changed)
-	radio_label = _label(panel, "", 12, 347, 615, 10, Color("#e4c99e"))
+	volume_slider = _pixel_slider(panel, 558, 330, 67, 0.0, 1.0, 0.05, radio.volume, _volume_changed)
+	# The single radio status/broadcast line lives in the upper hint panel.
+	# No duplicate text at the bottom edge of the viewport.
+	_label(panel, "ГРОМКОСТЬ", 558, 309, 70, 8, Color("#a3b5b9"))
 
 func _make_rest(panel: Control) -> void:
 	_button(panel, "ЗАВАРИТЬ", 12, 285, 99, 28, _send.bind("brew"))
@@ -224,9 +234,9 @@ func _make_rest(panel: Control) -> void:
 	_button(panel, "ПОТУШИТЬ", 405, 285, 104, 28, _send.bind("extinguish"))
 	_button(panel, "УБРАТЬ ПЕПЕЛ", 513, 285, 115, 28, _send.bind("empty_ashtray"))
 	rest_label = _label(panel, "", 12, 320, 612, 11, Color("#ffe0b2"))
-	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 341, 170, 9, Color("#a6b9b9"))
+	_label(panel, "ФОНОВЫЕ ЗВУКИ", 12, 338, 170, 9, Color("#a6b9b9"))
 	ambience_slider = _pixel_slider(panel, 188, 338, 174, 0.0, 1.0, 0.05, soundscape.ambient_volume, _ambient_changed)
-	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 370, 341, 254, 9, Color("#b2bdb9"))
+	_label(panel, "СДЕЛАЙ ЧАЙ И ПОСИДИ У ОГНЯ.", 370, 338, 254, 9, Color("#b2bdb9"))
 
 func _make_table(panel: Control) -> void:
 	_button(panel, "НА ТАРЕЛКУ", 12, 286, 131, 27, _send.bind("plate"))
@@ -235,7 +245,7 @@ func _make_table(panel: Control) -> void:
 	_button(panel, "КЕТЧУП", 368, 286, 119, 27, _sauce.bind(1))
 	_button(panel, "ГОРЧИЦА", 491, 286, 137, 27, _sauce.bind(2))
 	table_label = _label(panel, "", 12, 321, 612, 11, Color("#ffdeb2"))
-	_label(panel, "НАЖМИ НА ПРЕДМЕТЫ НА СТОЛЕ, ЧТОБЫ ВЗЯТЬ ИХ.", 12, 344, 610, 9, Color("#a7b9b9"))
+	_label(panel, "НАЖМИ НА ПРЕДМЕТЫ НА СТОЛЕ, ЧТОБЫ ВЗЯТЬ ИХ.", 12, 340, 610, 9, Color("#a7b9b9"))
 
 func _send(action: String) -> void:
 	request.emit(action, null)
@@ -297,16 +307,16 @@ func refresh() -> void:
 	radio_freq_label.text = "%0.1f МГЦ" % radio.frequency
 	reception_bar.value = radio.reception * 100.0
 	var program: String = radio.broadcast_description()
-	radio_label.text = program if program != "" else radio.station_description()
+	## Radio status is shown once in the message strip, not below the controls.
 	if not is_equal_approx(radio_slider.value, radio.frequency):
 		radio_slider.set_value_no_signal(radio.frequency)
 	if not is_equal_approx(radio_dial.frequency, radio.frequency):
 		radio_dial.set_frequency(radio.frequency)
 	if not is_equal_approx(volume_slider.value, radio.volume):
 		volume_slider.set_value_no_signal(radio.volume)
-	rest_label.text = "%s • СИГАРЕТ %d • ОКУРКОВ %d • ЧАЙ ВЫПИТО %d" % [state.cup_description(), state.cigarettes_in_pack, state.ashtray_ash, state.tea_count]
+	rest_label.text = _one_line("%s • СИГАРЕТ %d • ОКУРКОВ %d • ЧАЙ %d" % [state.cup_description(), state.cigarettes_in_pack, state.ashtray_ash, state.tea_count], 84)
 	var plate_info := "ТАРЕЛКА: ПУСТО" if state.plated_food == "" else "ТАРЕЛКА: %s %s" % [state.plated_food, state.plated_sauce]
-	table_label.text = "%s • ГОТОВЫХ ПОРЦИЙ %d • ЧИСТЫХ ТАРЕЛОК %d • СОУС %s" % [plate_info, state.unplated_portions, state.plates_clean, state.sauce_selected]
+	table_label.text = _one_line("%s • ПОРЦИЙ %d • ТАРЕЛОК %d • СОУС %s" % [plate_info, state.unplated_portions, state.plates_clean, state.sauce_selected], 84)
 
 func layout_errors() -> PackedStringArray:
 	# CI regression guard: every clickable region must be in the 640x360 viewport,
@@ -326,5 +336,15 @@ func layout_errors() -> PackedStringArray:
 				if rect.intersects(other.get_global_rect()):
 					issues.append("Overlap: %s %s and %s %s at tab %d" % [control.name, str(rect), other.name, str(other.get_global_rect()), t])
 			visible_controls.append(control)
+	# Labels must not be truncated by the bottom of the game viewport.
+	for label in ui_labels:
+		if not label.is_visible_in_tree():
+			continue
+		var lr: Rect2 = label.get_global_rect()
+		if lr.position.y < 0.0 or lr.end.y > 354.01:
+			issues.append("Label clipped vertically: %s at %s" % [label.text, str(lr)])
+	# Native ProgressBar's theme minimum-size can silently inflate its height.
+	if reception_bar.size.y > 10.0 or progress_bar.size.y > 10.0:
+		issues.append("A pixel meter grew beyond the requested 8px")
 	set_tab(current)
 	return issues

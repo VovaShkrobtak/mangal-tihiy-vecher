@@ -66,7 +66,7 @@ func _draw() -> void:
 	for i in range(17):
 		var angle: float = START_ANGLE + (END_ANGLE - START_ANGLE) * float(i) / 16.0
 		var unit := Vector2(cos(angle), sin(angle))
-		draw_line(c + unit * (radius + 5), c + unit * (radius + (9 if i % 4 == 0 else 7)), Color("#e7c38a"), 1.0)
+		draw_line(c + unit * (radius - 1), c + unit * (radius + 2), Color("#e7c38a"), 1.0)
 	var fraction: float = (frequency - MIN_MHZ) / (MAX_MHZ - MIN_MHZ)
 	var pointer_angle := START_ANGLE + fraction * (END_ANGLE - START_ANGLE)
 	var pointer := Vector2(cos(pointer_angle), sin(pointer_angle))
